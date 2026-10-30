@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusVillain - Login</title>
+    <style>
+        body { background-color: #1a1a2e; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .box { background: #1e1e2f; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; margin: auto; border: 1px solid #3b3b5c; }
+        button { background: #8a2be2; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; font-weight: bold; }
+        button:hover { background: #6a1b9a; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #3b3b5c; background: #2a2a40; color: white; box-sizing: border-box; }
+        
+        /* ප්‍රශ්න අහන Form එක මුලින් හංගලා තියෙන්නේ */
+        #detailsForm { display: none; } 
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN BOX -->
+    <div class="box" id="loginBox">
+        <h2>FocusVillain Login</h2>
+        <p style="color: #a0a0a0; font-size: 14px;">Let's build your Command Center</p>
+        <button id="googleBtn">Sign in with Google</button>
+        <p id="status" style="color: #00ffcc; margin-top: 15px; font-size: 14px;"></p>
+    </div>
+
+    <!-- 2. DETAILS FORM -->
+    <div class="box" id="detailsForm">
+        <h2>Tell us about you</h2>
+        
+        <input type="text" id="userName" placeholder="Your Name">
+        <input type="text" id="userCountry" placeholder="Country">
+        <input type="number" id="userAge" placeholder="Age">
+        
+        <select id="userGoal">
+            <option value="" disabled selected>What is your main goal?</option>
+            <option value="Academic">Academic (School/Uni)</option>
+            <option value="Business">Business / Entrepreneurship</option>
+            <option value="Tech">Tech / Programming</option>
+            <option value="Creative">Creative Arts / Design</option>
+            <option value="Health">Health / Fitness</option>
+        </select>
+        
+        <button id="submitDetailsBtn">Submit & Continue</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // 🔴 මෙතන ඔයාගේ Firebase Config එක Paste කරන්න (පරණ එකම)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null; // ලොග් වුණු කෙනාගේ විස්තර මතක තියාගන්න
+
+        // Google Login
+        document.getElementById('googleBtn').addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    currentUser = result.user; // යූසර්ව මතක තියාගන්නවා
+                    
+                    // Form එක පෙන්නන්න
+                    document.getElementById('loginBox').style.display = 'none';
+                    document.getElementById('detailsForm').style.display = 'block';
+                    
+                    // ඔයාගේ නම ඔටෝමැටිකලි දාන්න
+                    document.getElementById('userName').value = result.user.displayName || "";
+                }).catch((error) => {
+                    document.getElementById('status').innerText = "Error: " + error.message;
+                });
+        });
+
+        // Form එක Submit කරන කොටස
+        document.getElementById('submitDetailsBtn').addEventListener('click', async () => {
+            const name = document.getElementById('userName').value;
+            const country = document.getElementById('userCountry').value;
+            const age = document.getElementById('userAge').value;
+            const goal = document.getElementById('userGoal').value;
+
+            if(!name || !country || !age || !goal) {
+                alert("Please fill all the details!");
+                return;
+            }
+
+            const btn = document.getElementById('submitDetailsBtn');
+            btn.innerText = "AI is analyzing...";
+            btn.disabled = true;
+
+            try {
+                // 1. Firebase Token එක ගන්නවා
+                const token = await currentUser.getIdToken();
+
+                // 2. අපේ Render Server එකට යවනවා
+                const response = await fetch('https://focusvillain-server.onrender.com/api/onboard', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        userName: name,
+                        userCountry: country,
+                        userAge: age,
+                        userGoal: goal
+                    })
+                });
+
+                const data = await response.json();
+
+                if(response.ok) {
+                    // සාර්ථක වුණාම
+                    alert(`Success! AI classified your goal as: ${data.data.category}`);
+                    // ඊළඟට අපි මේකෙන් Dashboard එකට යන විදිය හදමු
+                } else {
+                    alert("Server Error: " + data.error);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Network Error! Make sure your backend is running.");
+            } finally {
+                btn.innerText = "Submit & Continue";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
