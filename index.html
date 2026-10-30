@@ -11,8 +11,7 @@
         button:hover { background: #6a1b9a; }
         button:disabled { background: #555; cursor: not-allowed; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #3b3b5c; background: #2a2a40; color: white; box-sizing: border-box; }
-        
-        /* ප්‍රශ්න අහන Form එක මුලින් හංගලා තියෙන්නේ */
+    
         #detailsForm { display: none; } 
     </style>
 </head>
@@ -51,14 +50,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // 🔴 මෙතන ඔයාගේ Firebase Config එක Paste කරන්න (පරණ එකම)
+        
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBe0ia1FGw2poDTonlXi0V2LvRQGwi8CX4",
+  authDomain: "focusai-7fe3c.firebaseapp.com",
+  projectId: "focusai-7fe3c",
+  storageBucket: "focusai-7fe3c.firebasestorage.app",
+  messagingSenderId: "761646577346",
+  appId: "1:761646577346:web:42d5c1b2bd9fd8fe846d5b",
+  measurementId: "G-0T6JWZRD7X"
         };
 
         const app = initializeApp(firebaseConfig);
