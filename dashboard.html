@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // ඔයාගේ Firebase Config එක මෙතනට දාන්න
+  const firebaseConfig = {
+      apiKey: "AIzaSyBe0ia1FGw2poDTonlXi0V2LvRQGwi8CX4",
+      authDomain: "focusai-7fe3c.firebaseapp.com",
+      projectId: "focusai-7fe3c",
+      storageBucket: "focusai-7fe3c.firebasestorage.app",
+      messagingSenderId: "761646577346",
+      appId: "1:761646577346:web:42d5c1b2bd9fd8fe846d5b",
+      measurementId: "G-0T6JWZRD7X"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // යූසර් ලොග් වෙලා ඉන්නවද බලනවා
+  onAuthStateChanged(auth, (user) => {
+      if (user) {
+          // ලොග් වෙලා නම්, නම පෙන්නනවා
+          document.getElementById('userNameDisplay').textContent = user.displayName || "User";
+      } else {
+          // ලොග් වෙලා නැත්නම්, ආයේ index.html එකට යවනවා
+          window.location.href = "index.html";
+      }
+  });
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0B0B14">
+  <title>FocusVillain — Your Study Command Center</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            midnight: '#0B0B14',
+            surface: '#131321',
+            elevated: '#1A1A2B',
+            violet: '#A78BFA',
+            purple: '#8B5CF6',
+            cyan: '#67E8F9',
+            mint: '#6EE7B7',
+            muted: '#9292AA'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #0B0B14;
+      color: #F4F3FF;
+      font-family: Inter, sans-serif;
+    }
+
+    .panel {
+      background: rgba(19, 19, 33, .92);
+      border: 1px solid rgba(255,255,255,.075);
+      border-radius: 20px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: #9292AA;
+      font-size: 13px;
+      transition: .2s;
+      width: 100%;
+      text-align: left;
+    }
+
+    .sidebar-link:hover, .sidebar-link.active {
+      background: rgba(167,139,250,.12);
+      color: #C4B5FD;
+    }
+
+    .sidebar-link.active {
+      border: 1px solid rgba(167,139,250,.13);
+    }
+
+    .gradient-text {
+      background: linear-gradient(100deg,#C4B5FD,#67E8F9);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .primary-btn {
+      background: linear-gradient(110deg,#A78BFA,#7C3AED);
+      color: white;
+      transition: .2s;
+    }
+
+    .primary-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .primary-btn:disabled { opacity: .4; pointer-events: none; }
+
+    .ghost-btn {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      transition: .2s;
+    }
+    .ghost-btn:hover { border-color: rgba(167,139,250,.5); }
+    .ghost-btn:disabled { opacity: .35; pointer-events: none; }
+
+    .field {
+      width: 100%;
+      background: #0D0D19;
+      color: #F4F3FF;
+      border: 1px solid #303047;
+      border-radius: 11px;
+      padding: 12px;
+      outline: none;
+      font-size: 13px;
+      color-scheme: dark;
+    }
+
+    .field:focus { border-color: #A78BFA; }
+
+    .field option { background: #131321; }
+
+    .task-row {
+      background: #10101D;
+      border: 1px solid #28283B;
+      border-radius: 14px;
+      padding: 15px;
+      transition: .2s;
+    }
+
+    .task-row:hover { border-color: #62518A; }
+
+    .task-row.done { opacity: .62; }
+
+    .task-row.done .task-name {
+      text-decoration: line-through;
+      color: #9292AA;
+    }
+
+    .task-check {
+      appearance: none;
+      width: 19px;
+      height: 19px;
+      flex-shrink: 0;
+      border: 1.5px solid #555570;
+      border-radius: 6px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .task-check:checked {
+      background: #8B5CF6;
+      border-color: #8B5CF6;
+    }
+
+    .task-check:checked::after {
+      content: "✓";
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .progress-track {
+      background: #29293C;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      transition: width .35s ease;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+
+    /* Poll chips */
+    .chip {
+      border: 1px solid #303047;
+      background: #10101D;
+      border-radius: 999px;
+      padding: 9px 15px;
+      font-size: 13px;
+      color: #C9C7DD;
+      transition: .15s;
+      cursor: pointer;
+    }
+    .chip:hover { border-color: #7a67b8; }
+    .chip.on {
+      background: rgba(139,92,246,.24);
+      border-color: #A78BFA;
+      color: #fff;
+    }
+    .chip-sm { padding: 6px 11px; font-size: 12px; }
+
+    /* Wizard chat bubbles */
+    .bubble-app {
+      background: #171727;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px 18px 18px 4px;
+      padding: 13px 16px;
+      max-width: 90%;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .bubble-user {
+      background: linear-gradient(110deg,#A78BFA,#7C3AED);
+      border-radius: 18px 18px 4px 18px;
+      padding: 10px 15px;
+      max-width: 90%;
+      margin-left: auto;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+    .slot {
+      background: #0D0D19;
+      border: 1px solid #28283B;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .nav-mobile { display: none; }
+
+    @media (max-width: 1023px) {
+      .sidebar { display: none; }
+      .nav-mobile { display: flex; }
+      .main-layout { margin-left: 0 !important; }
+    }
+
+    @media (max-width: 640px) {
+      .page-content { padding: 18px 14px !important; }
+      .hero-title { font-size: 28px !important; }
+      .chart-box { height: 230px; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar w-64 fixed inset-y-0 left-0 z-40 bg-[#0E0E19] border-r border-white/5 p-5 flex flex-col">
+
+    <a href="#home" class="flex items-center gap-3 px-2 mb-10">
+      <div class="w-11 h-11 rounded-2xl primary-btn flex items-center justify-center text-lg">
+        <i class="fa-solid fa-bolt"></i>
+      </div>
+      <div>
+        <div class="text-lg font-extrabold tracking-tight">
+          Focus<span class="gradient-text">Villain</span>
+        </div>
+        <div class="text-[10px] text-muted tracking-widest uppercase mt-1">
+          Your study command center
+        </div>
+      </div>
+    </a>
+
+    <p class="text-[10px] uppercase tracking-[2px] text-muted px-3 mb-3">
+      Workspace
+    </p>
+
+    <nav class="space-y-1">
+      <a href="#home" class="sidebar-link active">
+        <i class="fa-solid fa-house w-4"></i> Overview
+      </a>
+      <a href="#schedule" class="sidebar-link">
+        <i class="fa-regular fa-calendar-days w-4"></i> Today's timetable
+      </a>
+      <a href="#weekly" class="sidebar-link">
+        <i class="fa-solid fa-table-list w-4"></i> Weekly plan
+      </a>
+      <button onclick="openWizard()" class="sidebar-link">
+        <i class="fa-solid fa-wand-magic-sparkles w-4"></i> Goal planner
+      </button>
+      <a href="#progress" class="sidebar-link">
+        <i class="fa-solid fa-chart-line w-4"></i> My progress
+      </a>
+    </nav>
+
+    <p class="text-[10px] uppercase tracking-[2px] text-muted px-3 mt-9 mb-3">
+      Accountability
+    </p>
+
+    <nav class="space-y-1">
+      <button onclick="openMentor()" class="sidebar-link">
+        <i class="fa-solid fa-user-group w-4"></i> Parent & mentor
+      </button>
+      <button onclick="startFocus()" class="sidebar-link">
+        <i class="fa-solid fa-stopwatch w-4"></i> Focus timer
+      </button>
+    </nav>
+
+    <div class="mt-auto panel p-4">
+      <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-violet flex items-center justify-center mb-3">
+        <i class="fa-solid fa-meteor"></i>
+      </div>
+      <p class="text-sm font-semibold">Stay consistent.</p>
+      <p class="text-xs text-muted mt-1 leading-5">
+        Small focused sessions build extraordinary results.
+      </p>
+      <div class="progress-track h-1.5 mt-4">
+        <div id="sideProgress" class="progress-fill bg-violet" style="width:0%"></div>
+      </div>
+      <p class="text-[10px] text-muted mt-2">
+        Daily completion <span id="sidePercent">0%</span>
+      </p>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main-layout flex-1 min-w-0 ml-64" id="home">
+
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-30 bg-[#0B0B14]/90 backdrop-blur-xl border-b border-white/5 px-5 md:px-9 py-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-xs text-muted">YOUR PERSONAL STUDY SPACE</p>
+        <h1 class="text-lg font-bold mt-1">Command Center</h1>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="currentDate" class="hidden sm:block text-xs text-muted"></span>
+        <button onclick="openMentor()"
+          class="rounded-xl border border-white/10 bg-surface px-3 py-2 text-xs hover:border-violet/50">
+          <i class="fa-solid fa-shield-halved text-violet mr-1"></i>
+          Mentor
+        </button>
+        <div id="userNameDisplay" class="px-3 py-2 rounded-xl bg-gradient-to-br from-violet to-cyan text-midnight flex items-center justify-center font-extrabold text-sm">
+    User
+</div>
+      </div>
+    </header>
+
+    <main class="page-content max-w-[1500px] mx-auto p-6 md:p-9 space-y-7">
+
+      <!-- HERO -->
+      <section class="relative overflow-hidden rounded-3xl border border-violet/20 p-6 md:p-9 bg-gradient-to-br from-[#21173C] via-[#17172B] to-[#101827]">
+        <div class="absolute -right-16 -top-24 w-72 h-72 rounded-full bg-violet/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute right-16 bottom-0 w-44 h-24 rounded-full bg-cyan/10 blur-3xl pointer-events-none"></div>
+
+        <div class="relative max-w-2xl">
+          <div class="inline-flex items-center gap-2 rounded-full border border-violet/25 bg-violet/10 px-3 py-1.5 text-[10px] font-bold tracking-wider text-violet mb-5">
+            <span class="w-1.5 h-1.5 bg-mint rounded-full"></span>
+            YOUR NEXT LEVEL STARTS HERE
+          </div>
+
+          <h2 class="hero-title text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
+            Outsmart your
+            <span class="gradient-text">distractions.</span>
+          </h2>
+
+          <p class="text-sm md:text-base text-[#B6B3CC] mt-4 leading-7 max-w-lg">
+            Your goals. Your schedule. Your rules.
+            Build a smarter study routine and make every session count.
+          </p>
+
+          <div class="flex flex-wrap gap-3 mt-7">
+            <button onclick="openWizard()" class="primary-btn rounded-xl px-5 py-3 text-sm font-bold">
+              <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+              <span id="heroBtnText">Set my goal</span>
+            </button>
+            <a href="#schedule" class="rounded-xl px-5 py-3 text-sm font-semibold border border-white/10 bg-white/5 hover:bg-white/10">
+              View today's tasks <i class="fa-solid fa-arrow-right ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <section id="progress" class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <div class="panel p-5">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted">Tasks completed</span>
+            <span class="w-9 h-9 rounded-xl bg-mint/10 text-mint flex items-center justify-center">
+              <i class="fa-solid fa-check"></i>
+            </span>
+          </div>
+          <p class="text-3xl font-extrabold mt-4" id="completedCount">0/0</p>
+          <p class="text-[11px] text-muted mt-2">Your daily task checklist</p>
+        </div>
+
+        <div class="panel p-5">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted">Completion rate</span>
+            <span class="w-9 h-9 rounded-xl bg-violet/10 text-violet flex items-center justify-center">
+              <i class="fa-solid fa-chart-pie"></i>
+            </span>
+          </div>
+          <p class="text-3xl font-extrabold mt-4" id="completionRate">0%</p>
+          <p class="text-[11px] text-muted mt-2">Based on today's tasks</p>
+        </div>
+
+        <div class="panel p-5">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted">Planned study</span>
+            <span class="w-9 h-9 rounded-xl bg-cyan/10 text-cyan flex items-center justify-center">
+              <i class="fa-solid fa-clock"></i>
+            </span>
+          </div>
+          <p class="text-3xl font-extrabold mt-4" id="plannedHours">0h</p>
+          <p class="text-[11px] text-muted mt-2">Study time today</p>
+        </div>
+
+        <div class="panel p-5">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted">Focus timer</span>
+            <span class="w-9 h-9 rounded-xl bg-orange-400/10 text-orange-300 flex items-center justify-center">
+              <i class="fa-solid fa-stopwatch"></i>
+            </span>
+          </div>
+          <p class="text-3xl font-extrabold mt-4" id="timerStat">25:00</p>
+          <p class="text-[11px] text-muted mt-2" id="timerStatus">Ready for a focus session</p>
+        </div>
+      </section>
+
+      <!-- DAILY PROGRESS CHARTS -->
+      <section id="charts" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+        <div class="panel p-5 md:p-6 xl:col-span-3">
+          <div class="flex flex-wrap justify-between gap-3 items-start mb-5">
+            <div>
+              <p class="text-[10px] tracking-[2px] uppercase text-violet font-bold">Daily progress</p>
+              <h2 class="text-xl font-bold mt-2">Last 7 days</h2>
+              <p class="text-xs text-muted mt-2">Completion rate per day. Today updates live as you check off tasks.</p>
+            </div>
+            <div class="flex gap-4 text-right">
+              <div>
+                <p class="text-[10px] text-muted uppercase tracking-wider">7-day avg</p>
+                <p class="text-lg font-extrabold text-cyan" id="weekAvg">0%</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-muted uppercase tracking-wider">Best day</p>
+                <p class="text-lg font-extrabold text-mint" id="weekBest">0%</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-muted uppercase tracking-wider">Streak</p>
+                <p class="text-lg font-extrabold text-violet" id="weekStreak">0d</p>
+              </div>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="weekChart" aria-label="Seven day completion chart" role="img"></canvas></div>
+        </div>
+
+        <div class="panel p-5 md:p-6 xl:col-span-2">
+          <p class="text-[10px] tracking-[2px] uppercase text-violet font-bold">Today</p>
+          <h2 class="text-xl font-bold mt-2">Study time by subject</h2>
+          <p class="text-xs text-muted mt-2 mb-5">Minutes finished vs. still to go.</p>
+          <div class="chart-box"><canvas id="subjectChart" aria-label="Study minutes by subject chart" role="img"></canvas></div>
+        </div>
+      </section>
+
+      <!-- CONTENT GRID -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+
+        <!-- TODAY'S TIMETABLE -->
+        <section id="schedule" class="panel p-5 md:p-6 xl:col-span-3">
+
+          <div class="flex flex-wrap justify-between gap-4 items-start mb-6">
+            <div>
+              <p class="text-[10px] tracking-[2px] uppercase text-violet font-bold">
+                Stay on track
+              </p>
+              <h2 class="text-xl font-bold mt-2">Today's timetable</h2>
+              <p class="text-xs text-muted mt-2">Check off each session as you finish.</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openTaskModal()"
+                class="rounded-xl border border-white/10 bg-elevated px-3 py-2 text-xs hover:border-violet/50">
+                <i class="fa-solid fa-plus mr-1 text-mint"></i> Add task
+              </button>
+              <button onclick="reschedule()"
+                class="rounded-xl border border-white/10 bg-elevated px-3 py-2 text-xs hover:border-violet/50">
+                <i class="fa-solid fa-arrows-rotate mr-1 text-violet"></i> Reschedule
+              </button>
+            </div>
+          </div>
+
+          <div class="flex justify-between text-xs mb-2">
+            <span class="text-muted">Daily progress</span>
+            <span id="progressLabel" class="text-mint font-bold">0%</span>
+          </div>
+          <div class="progress-track h-2 mb-6">
+            <div id="progressBar" class="progress-fill bg-gradient-to-r from-purple to-cyan" style="width:0%"></div>
+          </div>
+
+          <div id="taskList" class="space-y-3"></div>
+
+          <div class="mt-5 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-3">
+            <span class="text-xs text-muted" id="taskSummary">0 sessions planned</span>
+            <button onclick="openTaskModal()"
+              class="text-xs text-violet hover:text-white transition">
+              Add a task <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+          </div>
+        </section>
+
+        <!-- GOAL CARD -->
+        <section id="goalCard" class="panel p-5 md:p-6 xl:col-span-2">
+          <div class="w-11 h-11 rounded-2xl bg-violet/10 text-violet flex items-center justify-center text-lg mb-4">
+            <i class="fa-solid fa-bullseye"></i>
+          </div>
+          <p class="text-[10px] tracking-[2px] uppercase text-violet font-bold">My goal</p>
+          <div id="goalBody" class="mt-2"></div>
+        </section>
+      </div>
+
+      <!-- WEEKLY PLAN -->
+      <section id="weekly" class="panel p-5 md:p-6">
+        <div class="flex flex-wrap justify-between gap-4 items-start mb-5">
+          <div>
+            <p class="text-[10px] tracking-[2px] uppercase text-violet font-bold">Full week</p>
+            <h2 class="text-xl font-bold mt-2">Weekly plan</h2>
+            <p class="text-xs text-muted mt-2" id="weekSummary">Pick a day to see your sessions.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openTaskModal()"
+              class="rounded-xl border border-white/10 bg-elevated px-3 py-2 text-xs hover:border-violet/50">
+              <i class="fa-solid fa-plus mr-1 text-mint"></i> Add task
+            </button>
+            <button onclick="downloadPDF()" class="primary-btn rounded-xl px-3 py-2 text-xs font-bold">
+              <i class="fa-solid fa-file-pdf mr-1"></i> Download PDF
+            </button>
+          </div>
+        </div>
+        <div id="weekTabs" class="flex flex-wrap gap-2 mb-5"></div>
+        <div id="weekList" class="space-y-3"></div>
+      </section>
+
+      <!-- BOTTOM SECTION -->
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="panel p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl bg-cyan/10 text-cyan flex items-center justify-center">
+              <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm">Focus room</h3>
+              <p class="text-xs text-muted mt-1">One session. One clear goal.</p>
+            </div>
+          </div>
+
+          <div class="text-center py-5">
+            <div id="timerDisplay" class="text-5xl font-extrabold tracking-tight">25:00</div>
+            <p class="text-xs text-muted mt-3" id="timerMessage">Ready when you are.</p>
+          </div>
+
+          <div class="flex gap-3">
+            <button id="timerButton" onclick="toggleTimer()"
+              class="primary-btn rounded-xl py-3 flex-1 text-sm font-bold">
+              <i class="fa-solid fa-play mr-2"></i> Start focus
+            </button>
+            <button onclick="resetTimer()"
+              class="rounded-xl border border-white/10 px-4 hover:bg-white/5" aria-label="Reset timer">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+          <p class="text-[10px] text-muted text-center mt-4">
+            25-minute focus session · 5-minute break after completion
+          </p>
+        </div>
+
+        <div class="panel p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl bg-purple/10 text-violet flex items-center justify-center">
+              <i class="fa-solid fa-compass"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm">Your daily mission</h3>
+              <p class="text-xs text-muted mt-1">Keep your next step clear.</p>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-gradient-to-br from-[#241B3E] to-[#171727] border border-violet/15 p-5">
+            <p class="text-xs text-violet font-bold uppercase tracking-wider">Today's challenge</p>
+            <h4 class="text-lg font-bold mt-3 leading-7">Progress over perfection.</h4>
+            <p class="text-xs text-[#B6B3CC] mt-2 leading-6">
+              Finish one important task before moving to the next.
+              Take short breaks and protect your focus.
+            </p>
+          </div>
+
+          <button onclick="openMentor()"
+            class="w-full mt-4 rounded-xl border border-white/10 py-3 text-xs font-semibold hover:border-violet/50">
+            <i class="fa-solid fa-user-shield text-violet mr-2"></i>
+            Open parent & mentor center
+          </button>
+        </div>
+      </section>
+
+      <footer class="py-5 text-center text-[10px] text-muted">
+        FOCUSVILLAIN © 2026 · BUILT FOR YOUR NEXT LEVEL
+      </footer>
+    </main>
+  </div>
+</div>
+
+<!-- GOAL WIZARD -->
+<div id="wizard" class="hidden fixed inset-0 z-[70] bg-midnight flex-col">
+  <div class="border-b border-white/5 px-4 py-3">
+    <div class="max-w-2xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl primary-btn flex items-center justify-center"><i class="fa-solid fa-bolt"></i></div>
+        <div>
+          <p class="text-sm font-bold">Focus<span class="gradient-text">Villain</span> planner</p>
+          <p class="text-[11px] text-muted" id="wizStepLabel">Question 1</p>
+        </div>
+      </div>
+      <button onclick="closeWizard()" class="text-muted hover:text-white p-2" aria-label="Close planner">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+    <div class="max-w-2xl mx-auto progress-track h-1.5 mt-3">
+      <div id="wizBar" class="progress-fill bg-gradient-to-r from-purple to-cyan" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="wizLog" class="flex-1 overflow-y-auto px-4 py-5">
+    <div id="wizLogInner" class="max-w-2xl mx-auto space-y-3"></div>
+  </div>
+
+  <div class="border-t border-white/5 bg-[#0E0E19]">
+    <div class="max-w-2xl mx-auto p-4">
+      <div id="wizInput" class="max-h-[44vh] overflow-y-auto pr-1"></div>
+      <div class="flex gap-3 mt-4">
+        <button id="wizBack" onclick="wizBack()" class="ghost-btn rounded-xl px-5 py-3 text-sm font-semibold">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Back
+        </button>
+        <button id="wizNextBtn" onclick="wizNext()" class="primary-btn rounded-xl py-3 flex-1 text-sm font-bold">
+          Next <i class="fa-solid fa-arrow-right ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div id="taskModal" class="hidden fixed inset-0 z-[80] bg-black/75 backdrop-blur-sm p-4 items-center justify-center">
+  <div class="panel w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
+    <div class="flex items-start justify-between gap-4 mb-5">
+      <div>
+        <h2 class="font-bold">Add a task</h2>
+        <p class="text-xs text-muted mt-1">Add anything extra to your plan.</p>
+      </div>
+      <button onclick="closeTaskModal()" class="text-muted hover:text-white" aria-label="Close dialog">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold mb-2">Task name</label>
+        <input id="ntName" class="field" placeholder="e.g. Past paper 2019">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold mb-2">Subject (optional)</label>
+        <input id="ntSubject" class="field" placeholder="e.g. Biology">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold mb-2">Days</label>
+        <div id="ntDays" class="flex flex-wrap gap-1.5"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold mb-2">Start time</label>
+          <input id="ntStart" type="time" class="field">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-2">Duration</label>
+          <select id="ntDur" class="field">
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60" selected>1 hour</option>
+            <option value="90">1.5 hours</option>
+            <option value="120">2 hours</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="saveTask()" class="primary-btn rounded-xl p-3 w-full mt-6 text-sm font-bold">
+      <i class="fa-solid fa-plus mr-2"></i> Add to my plan
+    </button>
+  </div>
+</div>
+
+<!-- MENTOR MODAL -->
+<div id="mentorModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm p-4 items-center justify-center">
+  <div class="panel w-full max-w-md p-6">
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-violet/10 text-violet flex items-center justify-center">
+          <i class="fa-solid fa-user-shield text-lg"></i>
+        </div>
+        <div>
+          <h2 class="font-bold">Parent & mentor center</h2>
+          <p class="text-xs text-muted mt-1">Study accountability overview</p>
+        </div>
+      </div>
+      <button onclick="closeMentor()" class="text-muted hover:text-white" aria-label="Close dialog">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <div class="mt-6 rounded-xl bg-[#0D0D19] border border-white/5 p-4 space-y-4">
+      <div class="flex justify-between gap-4 text-xs">
+        <span class="text-muted">Today's completion</span>
+        <strong id="mentorProgress">0%</strong>
+      </div>
+      <div class="flex justify-between gap-4 text-xs">
+        <span class="text-muted">Completed tasks</span>
+        <strong id="mentorTasks">0 / 0</strong>
+      </div>
+      <div class="flex justify-between gap-4 text-xs">
+        <span class="text-muted">Planned study time</span>
+        <strong id="mentorHours">0 hours</strong>
+      </div>
+    </div>
+
+    <p class="text-xs text-muted leading-6 mt-4">
+      This is a local progress preview. Sharing reports, monitoring
+      device activity, and sending notifications require separate
+      integrations and appropriate consent.
+    </p>
+
+    <button onclick="closeMentor()" class="primary-btn rounded-xl p-3 w-full mt-5 text-sm font-bold">
+      Done
+    </button>
+  </div>
+</div>
+
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[90] hidden max-w-[90vw] rounded-xl bg-elevated border border-violet/30 px-5 py-3 text-sm shadow-xl"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+
+  /* =========================================================
+     Constants & storage
+  ========================================================= */
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];          // Monday first
+  const STUDY_TYPES = ['PRACTICE', 'THEORY', 'REVISION', 'CORE', 'TASK'];
+
+  const BADGES = {
+    PRACTICE: 'text-cyan bg-cyan/10 border-cyan/20',
+    THEORY: 'text-violet bg-violet/10 border-violet/20',
+    REVISION: 'text-mint bg-mint/10 border-mint/20',
+    CORE: 'text-orange-300 bg-orange-400/10 border-orange-300/20',
+    CLASS: 'text-sky-300 bg-sky-400/10 border-sky-300/20',
+    ACTIVITY: 'text-pink-300 bg-pink-400/10 border-pink-300/20',
+    TASK: 'text-amber-300 bg-amber-400/10 border-amber-300/20'
+  };
+
+  const store = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable */ }
+    }
+  };
+
+  const K_PROFILE = 'focusvillain_profile_v2';
+  const K_PLAN = 'focusvillain_plan_v2';
+  const K_DONE = 'focusvillain_done_v2';
+  const K_RATING = 'focusvillain_rating_v2';
+  const HISTORY_KEY = 'focusvillain_history_v1';
+
+  let profile = store.get(K_PROFILE, null);
+  let plan = store.get(K_PLAN, null);          // array of 7 days (index = JS getDay)
+  let doneByDate = store.get(K_DONE, {});
+  let rating = store.get(K_RATING, 0);
+  let history = store.get(HISTORY_KEY, {});
+
+  let tasks = [];
+  let weekDay = new Date().getDay();
+  let timerSeconds = 25 * 60;
+  let timerRunning = false;
+  let timerInterval = null;
+  let toastTimeout = null;
+
+  /* =========================================================
+     Helpers
+  ========================================================= */
+  function dateKey(d) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+  const toStr = n => `${pad(Math.floor(n / 60) % 24)}:${pad(n % 60)}`;
+
+  const fmt12 = v => {
+    if (!v) return '';
+    const [h, m] = v.split(':').map(Number);
+    return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`;
+  };
+
+  function timeLabel(value) {
+    const [h, m] = value.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    return `${pad(h % 12 || 12)}:${pad(m)} ${suffix}`;
+  }
+
+  function addMinutes(value, minutes) {
+    let [h, m] = value.split(':').map(Number);
+    let total = h * 60 + m + minutes;
+    total = ((total % 1440) + 1440) % 1440;
+    return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+  }
+
+  function durationLabel(minutes) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h ? `${h}h${m ? ` ${m}m` : ''}` : `${m}m`;
+  }
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;',
+      '"': '&quot;', "'": '&#39;'
+    })[char]);
+  }
+
+  function showToast(message) {
+    $('toast').textContent = message;
+    $('toast').classList.remove('hidden');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => $('toast').classList.add('hidden'), 3200);
+  }
+
+  function saveToday(rate, total) {
+    if (!total) return;
+    history[dateKey(new Date())] = rate;
+    store.set(HISTORY_KEY, history);
+  }
+
+  function lastSevenDays() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push({
+        key: dateKey(d),
+        label: i === 0 ? 'Today' : new Intl.DateTimeFormat('en', { weekday: 'short' }).format(d),
+        isToday: i === 0
+      });
+    }
+    return days;
+  }
+
+  /* =========================================================
+     Charts
+  ========================================================= */
+  let weekChart = null;
+  let subjectChart = null;
+
+  function initCharts() {
+    if (typeof Chart === 'undefined') return;
+
+    Chart.defaults.color = '#9292AA';
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.size = 11;
+
+    const grid = { color: 'rgba(255,255,255,.06)' };
+    const tooltip = {
+      backgroundColor: '#1A1A2B',
+      borderColor: 'rgba(167,139,250,.3)',
+      borderWidth: 1,
+      titleColor: '#F4F3FF',
+      bodyColor: '#C4B5FD',
+      padding: 10,
+      cornerRadius: 10
+    };
+
+    weekChart = new Chart($('weekChart'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{ label: 'Completion', data: [], backgroundColor: [], borderRadius: 8, borderSkipped: false, maxBarThickness: 44 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 100, grid, ticks: { stepSize: 25, callback: v => v + '%' }, border: { display: false } },
+          x: { grid: { display: false }, border: { display: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { ...tooltip, callbacks: { label: ctx => ` ${ctx.parsed.y}% completed` } }
+        }
+      }
+    });
+
+    subjectChart = new Chart($('subjectChart'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Done', data: [], backgroundColor: '#6EE7B7', borderRadius: 6, borderSkipped: false },
+          { label: 'Remaining', data: [], backgroundColor: 'rgba(167,139,250,.35)', borderRadius: 6, borderSkipped: false }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid, border: { display: false }, ticks: { callback: v => v + 'm' } },
+          y: { stacked: true, grid: { display: false }, border: { display: false } }
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 16 } },
+          tooltip: { ...tooltip, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x} min` } }
+        }
+      }
+    });
+  }
+
+  function updateCharts(rate) {
+    if (!weekChart || !subjectChart) return;
+
+    const days = lastSevenDays();
+    const values = days.map(d => d.isToday ? rate : (history[d.key] ?? 0));
+
+    weekChart.data.labels = days.map(d => d.label);
+    weekChart.data.datasets[0].data = values;
+    weekChart.data.datasets[0].backgroundColor = days.map(d =>
+      d.isToday ? '#8B5CF6' : 'rgba(103,232,249,.55)'
+    );
+    weekChart.update();
+
+    const tracked = days.filter(d => d.isToday ? tasks.length : history[d.key] !== undefined);
+    const trackedValues = tracked.map(d => d.isToday ? rate : history[d.key]);
+    const avg = trackedValues.length
+      ? Math.round(trackedValues.reduce((a, b) => a + b, 0) / trackedValues.length)
+      : 0;
+    const best = trackedValues.length ? Math.max(...trackedValues) : 0;
+
+    let streak = 0;
+    for (let i = days.length - 1; i >= 0; i--) {
+      const v = days[i].isToday ? rate : history[days[i].key];
+      if (v !== undefined && v >= 50) streak++;
+      else if (days[i].isToday) continue;
+      else break;
+    }
+
+    $('weekAvg').textContent = `${avg}%`;
+    $('weekBest').textContent = `${best}%`;
+    $('weekStreak').textContent = `${streak}d`;
+
+    const bySubject = {};
+    tasks.filter(t => STUDY_TYPES.includes(t.type)).forEach(t => {
+      const name = t.subject || 'Other';
+      if (!bySubject[name]) bySubject[name] = { done: 0, left: 0 };
+      bySubject[name][t.done ? 'done' : 'left'] += t.duration;
+    });
+    const names = Object.keys(bySubject);
+
+    subjectChart.data.labels = names;
+    subjectChart.data.datasets[0].data = names.map(n => bySubject[n].done);
+    subjectChart.data.datasets[1].data = names.map(n => bySubject[n].left);
+    subjectChart.update();
+  }
+
+  /* =========================================================
+     Today's tasks
+  ========================================================= */
+  function loadTodayTasks() {
+    const key = dateKey(new Date());
+    const done = new Set(doneByDate[key] || []);
+    const day = plan ? (plan[new Date().getDay()] || []) : [];
+    tasks = day.map(t => ({ ...t, done: done.has(t.id) }))
+      .sort((a, b) => a.start.localeCompare(b.start));
+  }
+
+  function persistDone() {
+    const key = dateKey(new Date());
+    doneByDate[key] = tasks.filter(t => t.done).map(t => t.id);
+    store.set(K_DONE, doneByDate);
+  }
+
+  function renderTasks() {
+    const list = $('taskList');
+
+    if (!tasks.length) {
+      list.innerHTML = plan
+        ? `<div class="text-center py-10 text-muted">
+             <i class="fa-regular fa-calendar-check text-3xl mb-3"></i>
+             <p class="text-sm">Nothing planned today.</p>
+             <p class="text-xs mt-2">Enjoy the free day, or add a task.</p>
+           </div>`
+        : `<div class="text-center py-10 text-muted">
+             <i class="fa-solid fa-bullseye text-3xl mb-3"></i>
+             <p class="text-sm">No timetable yet.</p>
+             <button onclick="openWizard()" class="primary-btn rounded-xl px-5 py-2.5 text-xs font-bold mt-4">
+               Answer a few questions
+             </button>
+           </div>`;
+      updateProgress();
+      return;
+    }
+
+    list.innerHTML = tasks.map(task => {
+      const end = addMinutes(task.start, task.duration);
+      const badge = BADGES[task.type] || BADGES.CORE;
+
+      return `
+        <article class="task-row flex items-center gap-3 ${task.done ? 'done' : ''}">
+          <input class="task-check" type="checkbox"
+            aria-label="Complete ${escapeHTML(task.name)}"
+            data-id="${escapeHTML(task.id)}" ${task.done ? 'checked' : ''}>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold">${timeLabel(task.start)} – ${timeLabel(end)}</p>
+            <p class="task-name text-sm font-semibold mt-1.5 break-words">${escapeHTML(task.name)}</p>
+            <p class="text-[10px] text-muted mt-1">${task.subject ? escapeHTML(task.subject) + ' · ' : ''}${durationLabel(task.duration)}</p>
+          </div>
+          <span class="text-[9px] font-bold border rounded-lg px-2 py-1 ${badge}">${task.type}</span>
+        </article>`;
+    }).join('');
+
+    list.querySelectorAll('.task-check').forEach(checkbox => {
+      checkbox.addEventListener('change', event => {
+        const task = tasks.find(t => t.id === event.target.dataset.id);
+        if (task) {
+          task.done = event.target.checked;
+          persistDone();
+          renderTasks();
+          if (task.done) showToast('Nice work! One more step forward.');
+        }
+      });
+    });
+
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const completed = tasks.filter(t => t.done).length;
+    const total = tasks.length;
+    const rate = total ? Math.round(completed / total * 100) : 0;
+    const studyMin = tasks.filter(t => STUDY_TYPES.includes(t.type)).reduce((s, t) => s + t.duration, 0);
+    const hours = studyMin / 60;
+
+    $('completedCount').textContent = `${completed}/${total}`;
+    $('completionRate').textContent = `${rate}%`;
+    $('progressLabel').textContent = `${rate}%`;
+    $('progressBar').style.width = `${rate}%`;
+    $('sideProgress').style.width = `${rate}%`;
+    $('sidePercent').textContent = `${rate}%`;
+    $('taskSummary').textContent = `${total} item${total === 1 ? '' : 's'} today`;
+    $('plannedHours').textContent = `${Number(hours.toFixed(1))}h`;
+    $('mentorProgress').textContent = `${rate}%`;
+    $('mentorTasks').textContent = `${completed} / ${total}`;
+    $('mentorHours').textContent = `${Number(hours.toFixed(1))} hours`;
+
+    saveToday(rate, total);
+    updateCharts(rate);
+  }
+
+  function reschedule() {
+    const movable = tasks.filter(t => !t.done && STUDY_TYPES.includes(t.type));
+
+    if (!movable.length) {
+      showToast('Nothing to reschedule right now.');
+      return;
+    }
+
+    const now = new Date();
+    let minutes = Math.ceil((now.getHours() * 60 + now.getMinutes() + 5) / 5) * 5;
+
+    if (minutes >= 22 * 60 + 30) {
+      showToast("It's late. Rest well and tackle these tomorrow.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Move ${movable.length} unfinished task(s) to start from now?`
+    );
+    if (!confirmed) return;
+
+    movable.forEach(task => {
+      task.start = toStr(minutes);
+      minutes += task.duration + 15;
+    });
+
+    tasks.sort((a, b) => a.start.localeCompare(b.start));
+    renderTasks();
+    showToast('Unfinished tasks moved to start from now.');
+  }
+
+  /* =========================================================
+     Plan builder
+  ========================================================= */
+  const BEST = {
+    early: [300, 480],
+    morning: [480, 720],
+    afternoon: [720, 960],
+    evening: [960, 1200],
+    night: [1200, 1440]
+  };
+
+  const SESSION_LABEL = {
+    THEORY: 'Learn and understand concepts',
+    PRACTICE: 'Practice and exercises',
+    REVISION: 'Active recall and revision'
+  };
+
+  function buildPlan(a) {
+    const out = [[], [], [], [], [], [], []];
+    const wake = toMin(a.wake);
+    let bed = toMin(a.bed);
+    if (bed <= wake) bed += 1440;
+
+    const winStart = wake + 45;
+    const winEnd = Math.min(bed - 45, 1410);
+    const target = Math.round(Number(a.hours) * 60);
+    const [bs, be] = BEST[a.best] || [480, 720];
+    const note = (a.note || '').toLowerCase();
+    const sess = Number(a.session) || 90;               // preferred focus length
+    const brk = sess >= 50 ? 10 : 5;                     // break after each session
+    const minChunk = Math.min(25, sess);
+
+    const rotation = [];
+    (a.subjects || []).forEach(s => {
+      rotation.push(s);
+      if (note.includes(s.toLowerCase())) rotation.push(s);   // subjects named in the note get more time
+      if (s === a.weak) rotation.push(s);                      // hardest subject gets extra time
+    });
+    if (!rotation.length) rotation.push('Study');
+
+    const daysLeft = a.targetDate ? (new Date(a.targetDate + 'T00:00:00') - Date.now()) / 864e5 : null;
+    const soon = daysLeft !== null && daysLeft <= 60;
+    const cycle = soon ? ['PRACTICE', 'THEORY', 'PRACTICE', 'REVISION'] : ['THEORY', 'PRACTICE', 'REVISION'];
+
+    let rp = 0, cp = 0, id = 0;
+
+    for (let d = 0; d < 7; d++) {
+      const fixed = [];
+
+      (a.classes || []).forEach(r => {
+        if (r.days.includes(d) && r.start && r.end) {
+          fixed.push({
+            start: toMin(r.start), end: toMin(r.end), subject: r.subject, type: 'CLASS',
+            name: `${r.subject} class${r.teacher ? ' — ' + r.teacher : ''}`
+          });
+        }
+      });
+
+      (a.acts || []).forEach(r => {
+        if (r.days.includes(d) && r.start && r.end && r.name) {
+          fixed.push({ start: toMin(r.start), end: toMin(r.end), subject: '', type: 'ACTIVITY', name: r.name });
+        }
+      });
+
+      // free time = day window minus classes/activities (15 min buffer)
+      let free = [[winStart, winEnd]];
+      fixed.forEach(f => {
+        const b0 = f.start - 15, b1 = f.end + 15;
+        free = free.flatMap(([s, e]) => {
+          if (b1 <= s || b0 >= e) return [[s, e]];
+          return [[s, Math.min(e, b0)], [Math.max(s, b1), e]].filter(([x, y]) => y - x > 0);
+        });
+      });
+
+      // cut free time into sessions of up to 90 min
+      const chunks = [];
+      free.forEach(([s, e]) => {
+        let p = s;
+        while (e - p >= minChunk) {
+          const len = Math.min(sess, e - p);
+          chunks.push({ start: p, len });
+          p += len + brk;
+        }
+      });
+
+      const overlap = c => Math.max(0, Math.min(c.start + c.len, be) - Math.max(c.start, bs));
+      chunks.forEach(c => { c.score = overlap(c); });
+      chunks.sort((x, y) => y.score - x.score || x.start - y.start);
+
+      const picked = [];
+      let got = 0;
+      for (const c of chunks) {
+        if (got >= target) break;
+        const len = Math.min(c.len, Math.max(minChunk, target - got));
+        picked.push({ start: c.start, len });
+        got += len;
+      }
+      picked.sort((x, y) => x.start - y.start);
+
+      const revised = new Set();
+      picked.forEach(p => {
+        const after = fixed.find(f => f.type === 'CLASS' && f.end <= p.start && !revised.has(f.subject));
+        let subject, type, name;
+        if (after) {
+          subject = after.subject;
+          type = 'REVISION';
+          revised.add(subject);
+          name = `${subject} — Revise today's class`;
+        } else {
+          subject = rotation[rp++ % rotation.length];
+          type = cycle[cp++ % cycle.length];
+          name = `${subject} — ${SESSION_LABEL[type]}`;
+          if (subject === a.weak && a.weakTopic && a.weakTopic.trim() && type !== 'REVISION') {
+            name += ` (${a.weakTopic.trim()})`;
+          }
+        }
+        fixed.push({ start: p.start, end: p.start + p.len, subject, type, name });
+      });
+
+      fixed.sort((x, y) => x.start - y.start);
+      out[d] = fixed.map(f => ({
+        id: `${d}-${id++}`,
+        start: toStr(f.start),
+        duration: f.end - f.start,
+        subject: f.subject,
+        name: f.name,
+        type: f.type
+      }));
+    }
+
+    return out;
+  }
+
+  /* =========================================================
+     Weekly plan view
+  ========================================================= */
+  function renderWeek() {
+    const tabs = $('weekTabs');
+    const list = $('weekList');
+    const today = new Date().getDay();
+
+    tabs.innerHTML = DAY_ORDER.map(d =>
+      `<button type="button" class="chip ${d === weekDay ? 'on' : ''}" data-d="${d}">${DAY_NAMES[d]}${d === today ? ' •' : ''}</button>`
+    ).join('');
+
+    tabs.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => { weekDay = Number(b.dataset.d); renderWeek(); };
+    });
+
+    if (!plan) {
+      $('weekSummary').textContent = 'Your weekly plan will appear here after the setup questions.';
+      list.innerHTML = `<div class="text-center py-8 text-muted text-sm">No plan yet.</div>`;
+      return;
+    }
+
+    const items = (plan[weekDay] || []).slice().sort((a, b) => a.start.localeCompare(b.start));
+    const studyMin = items.filter(i => STUDY_TYPES.includes(i.type)).reduce((s, i) => s + i.duration, 0);
+    const classes = items.filter(i => i.type === 'CLASS').length;
+    $('weekSummary').textContent =
+      `${DAY_NAMES[weekDay]}: ${Number((studyMin / 60).toFixed(1))}h study · ${classes} class${classes === 1 ? '' : 'es'}`;
+
+    if (!items.length) {
+      list.innerHTML = `<div class="text-center py-8 text-muted text-sm">Free day. Nothing planned.</div>`;
+      return;
+    }
+
+    list.innerHTML = items.map(t => {
+      const end = addMinutes(t.start, t.duration);
+      const badge = BADGES[t.type] || BADGES.CORE;
+      const del = t.type === 'TASK'
+        ? `<button type="button" data-del="${escapeHTML(t.id)}" class="text-muted hover:text-white px-1" aria-label="Delete task"><i class="fa-solid fa-trash-can text-xs"></i></button>`
+        : '';
+      return `
+        <div class="task-row flex items-center gap-3">
+          <div class="w-28 shrink-0 text-xs font-bold">${timeLabel(t.start)}<br><span class="text-muted font-normal">to ${timeLabel(end)}</span></div>
+          <p class="flex-1 min-w-0 text-sm font-semibold break-words">${escapeHTML(t.name)}</p>
+          <span class="text-[9px] font-bold border rounded-lg px-2 py-1 ${badge}">${t.type}</span>
+          ${del}
+        </div>`;
+    }).join('');
+
+    list.querySelectorAll('[data-del]').forEach(btn => {
+      btn.onclick = () => {
+        plan[weekDay] = plan[weekDay].filter(t => t.id !== btn.dataset.del);
+        store.set(K_PLAN, plan);
+        if (weekDay === new Date().getDay()) { loadTodayTasks(); renderTasks(); }
+        renderWeek();
+        showToast('Task removed.');
+      };
+    });
+  }
+
+  /* =========================================================
+     Goal card + rating
+  ========================================================= */
+  function goalName(a) {
+    if (a.goal === 'other') return (a.goalOther || 'My goal').trim();
+    return GOALS[a.goal] ? GOALS[a.goal].label : 'My goal';
+  }
+
+  function detailName(a) {
+    if (a.goal === 'other') return (a.detailOther || '').trim();
+    return a.detail === 'Other' ? (a.detailOther || '').trim() : (a.detail || '');
+  }
+
+  function renderGoalCard() {
+    const box = $('goalBody');
+    $('heroBtnText').textContent = profile ? 'Edit my goal & plan' : 'Set my goal';
+
+    if (!profile) {
+      box.innerHTML = `
+        <h2 class="text-xl font-bold">Tell me your goal</h2>
+        <p class="text-xs text-muted mt-2 leading-5">
+          Answer a few quick questions and I will build your weekly timetable around your classes, sleep and best study time.
+        </p>
+        <button onclick="openWizard()" class="primary-btn w-full rounded-xl p-3.5 text-sm font-bold mt-6">
+          <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Start
+        </button>`;
+      return;
+    }
+
+    let countdown = '';
+    if (profile.targetDate) {
+      const days = Math.ceil((new Date(profile.targetDate + 'T00:00:00') - new Date()) / 864e5);
+      countdown = days >= 0
+        ? `<div class="rounded-xl bg-cyan/10 border border-cyan/20 text-cyan text-xs font-semibold px-3 py-2 mt-4"><i class="fa-regular fa-calendar mr-2"></i>${days} day${days === 1 ? '' : 's'} left to your target date</div>`
+        : `<div class="rounded-xl bg-white/5 border border-white/10 text-muted text-xs px-3 py-2 mt-4">Target date has passed.</div>`;
+    }
+
+    const detail = detailName(profile);
+    const stars = [1, 2, 3, 4, 5].map(n =>
+      `<button type="button" onclick="setRating(${n})" aria-label="${n} star${n > 1 ? 's' : ''}" class="text-2xl leading-none ${n <= rating ? 'text-yellow-300' : 'text-[#3a3a52]'}">★</button>`
+    ).join('');
+    const ratingMsg = !rating ? 'Tap a star to rate your plan.'
+      : rating >= 4 ? 'Great! Keep going and stay consistent.'
+      : rating === 3 ? 'Okay. Add tasks or edit your answers to improve it.'
+      : 'Sorry about that. Edit your answers and I will rebuild it.';
+
+    box.innerHTML = `
+      <h2 class="text-xl font-bold leading-7">${escapeHTML(goalName(profile))}</h2>
+      ${detail ? `<p class="text-xs text-muted mt-1">${escapeHTML(detail)}</p>` : ''}
+      <div class="flex flex-wrap gap-1.5 mt-4">
+        ${(profile.subjects || []).map(s => `<span class="text-[11px] border border-violet/25 bg-violet/10 text-violet rounded-lg px-2.5 py-1">${escapeHTML(s)}</span>`).join('')}
+      </div>
+      ${countdown}
+      ${profile.note ? `<p class="text-xs text-[#B6B3CC] leading-5 mt-4 border-l-2 border-violet/40 pl-3">${escapeHTML(profile.note)}</p>` : ''}
+
+      <div class="mt-5 pt-5 border-t border-white/5">
+        <p class="text-xs font-semibold mb-2">Rate this plan</p>
+        <div class="flex gap-1">${stars}</div>
+        <p class="text-[11px] text-muted mt-2">${ratingMsg}</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <button onclick="downloadPDF()" class="primary-btn rounded-xl p-3 text-xs font-bold">
+          <i class="fa-solid fa-file-pdf mr-1"></i> PDF
+        </button>
+        <button onclick="openWizard()" class="ghost-btn rounded-xl p-3 text-xs font-semibold">
+          <i class="fa-solid fa-pen mr-1"></i> Edit answers
+        </button>
+      </div>`;
+  }
+
+  function setRating(n) {
+    rating = n;
+    store.set(K_RATING, rating);
+    renderGoalCard();
+  }
+
+  /* =========================================================
+     Add task
+  ========================================================= */
+  let ntDays = [];
+
+  function openTaskModal() {
+    ntDays = [new Date().getDay()];
+    $('ntName').value = '';
+    $('ntSubject').value = '';
+    const now = new Date();
+    $('ntStart').value = `${pad(Math.min(now.getHours() + 1, 22))}:00`;
+    $('ntDur').value = '60';
+    renderNtDays();
+    $('taskModal').classList.remove('hidden');
+    $('taskModal').classList.add('flex');
+  }
+
+  function closeTaskModal() {
+    $('taskModal').classList.add('hidden');
+    $('taskModal').classList.remove('flex');
+  }
+
+  function renderNtDays() {
+    const box = $('ntDays');
+    box.innerHTML = DAY_ORDER.map(d =>
+      `<button type="button" class="chip chip-sm ${ntDays.includes(d) ? 'on' : ''}" data-d="${d}">${DAY_NAMES[d]}</button>`
+    ).join('');
+    box.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => {
+        const d = Number(b.dataset.d);
+        ntDays = ntDays.includes(d) ? ntDays.filter(x => x !== d) : [...ntDays, d];
+        b.classList.toggle('on');
+      };
+    });
+  }
+
+  function saveTask() {
+    const name = $('ntName').value.trim();
+    const start = $('ntStart').value;
+
+    if (!name) { showToast('Give your task a name.'); $('ntName').focus(); return; }
+    if (!start) { showToast('Choose a start time.'); return; }
+    if (!ntDays.length) { showToast('Pick at least one day.'); return; }
+
+    if (!plan) plan = [[], [], [], [], [], [], []];
+
+    const stamp = Date.now();
+    ntDays.forEach(d => {
+      plan[d].push({
+        id: `c${stamp}-${d}`,
+        start,
+        duration: Number($('ntDur').value),
+        subject: $('ntSubject').value.trim(),
+        name,
+        type: 'TASK'
+      });
+      plan[d].sort((a, b) => a.start.localeCompare(b.start));
+    });
+
+    store.set(K_PLAN, plan);
+    loadTodayTasks();
+    renderTasks();
+    renderWeek();
+    closeTaskModal();
+    showToast('Task added to your plan.');
+  }
+
+  /* =========================================================
+     PDF (built in the browser, no library needed)
+  ========================================================= */
+  function pdfEsc(s) {
+    return String(s)
+      .replace(/[—–]/g, '-')
+      .replace(/[‘’]/g, "'")
+      .replace(/[“”]/g, '"')
+      .replace(/[^\x20-\x7E]/g, '?')
+      .replace(/([\\()])/g, '\\$1');
+  }
+
+  function buildPDF(pages) {
+    const n = pages.length;
+    const objs = [];
+    objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objs[2] = `<< /Type /Pages /Kids [${pages.map((_, i) => `${5 + i * 2} 0 R`).join(' ')}] /Count ${n} >>`;
+    objs[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+    objs[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>';
+    pages.forEach((p, i) => {
+      objs[5 + i * 2] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents ${6 + i * 2} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>`;
+      objs[6 + i * 2] = `<< /Length ${p.length} >>\nstream\n${p}\nendstream`;
+    });
+
+    let out = '%PDF-1.4\n';
+    const offs = [];
+    for (let i = 1; i < objs.length; i++) {
+      offs[i] = out.length;
+      out += `${i} 0 obj\n${objs[i]}\nendobj\n`;
+    }
+    const xr = out.length;
+    out += `xref\n0 ${objs.length}\n0000000000 65535 f \n`;
+    for (let i = 1; i < objs.length; i++) out += `${String(offs[i]).padStart(10, '0')} 00000 n \n`;
+    out += `trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`;
+    return new Blob([out], { type: 'application/pdf' });
+  }
+
+  function downloadPDF() {
+    if (!plan || !profile) {
+      showToast('Create your plan first.');
+      return;
+    }
+
+    const COLORS = {
+      PRACTICE: '0.26 0.78 0.86', THEORY: '0.55 0.42 0.95', REVISION: '0.25 0.78 0.55',
+      CORE: '0.95 0.6 0.25', CLASS: '0.3 0.6 0.95', ACTIVITY: '0.92 0.4 0.62', TASK: '0.9 0.7 0.15'
+    };
+
+    const pages = [];
+    let c = [];
+    let y = 800;
+
+    const text = (s, x, yy, size = 10, bold = false, color = '0.12 0.12 0.18') =>
+      c.push(`${color} rg BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${yy} Td (${pdfEsc(s)}) Tj ET`);
+    const rect = (x, yy, w, h, color) => c.push(`${color} rg ${x} ${yy} ${w} ${h} re f`);
+
+    const newPage = () => {
+      if (c.length) pages.push(c.join('\n'));
+      c = [];
+      y = 800;
+    };
+
+    // Header
+    rect(0, 760, 595, 82, '0.36 0.22 0.82');
+    text('FocusVillain - Weekly Timetable', 40, 810, 22, true, '1 1 1');
+    text(`Goal: ${goalName(profile)}${detailName(profile) ? ' (' + detailName(profile) + ')' : ''}`, 40, 788, 11, false, '1 1 1');
+    text(`Created ${new Date().toDateString()}`, 40, 772, 9, false, '0.88 0.85 1');
+    y = 740;
+
+    const info = [];
+    if ((profile.subjects || []).length) info.push(`Subjects: ${profile.subjects.join(', ')}`);
+    info.push(`Wake ${fmt12(profile.wake)}  |  Sleep ${fmt12(profile.bed)}  |  ${profile.hours} study hours per day`);
+    if (profile.targetDate) info.push(`Target date: ${profile.targetDate}`);
+    if (profile.note) info.push(`Note: ${profile.note.length > 95 ? profile.note.slice(0, 92) + '...' : profile.note}`);
+    info.forEach(line => {
+      text(line.length > 105 ? line.slice(0, 102) + '...' : line, 40, y, 10);
+      y -= 15;
+    });
+    y -= 10;
+
+    DAY_ORDER.forEach(d => {
+      const items = (plan[d] || []).slice().sort((a, b) => a.start.localeCompare(b.start));
+      const need = 34 + Math.max(items.length, 1) * 16;
+      if (y - need < 50 && y < 760) newPage();
+
+      rect(40, y - 5, 515, 20, '0.93 0.91 0.99');
+      text(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d], 48, y, 12, true, '0.3 0.18 0.65');
+      y -= 24;
+
+      if (!items.length) {
+        text('Free day', 48, y, 10, false, '0.5 0.5 0.6');
+        y -= 16;
+      }
+
+      items.forEach(t => {
+        const end = addMinutes(t.start, t.duration);
+        const title = t.name.length > 58 ? t.name.slice(0, 55) + '...' : t.name;
+        text(`${fmt12(t.start)} - ${fmt12(end)}`, 48, y, 10, true);
+        rect(168, y - 1, 8, 8, COLORS[t.type] || COLORS.CORE);
+        text(title, 182, y, 10);
+        text(t.type, 505, y, 8, true, '0.45 0.45 0.55');
+        y -= 16;
+      });
+      y -= 10;
+    });
+
+    if (c.length) pages.push(c.join('\n'));
+
+    const withFooter = pages.map((p, i) =>
+      p + `\n0.5 0.5 0.6 rg BT /F1 8 Tf 40 24 Td (${pdfEsc(`FocusVillain  |  Page ${i + 1} of ${pages.length}`)}) Tj ET`
+    );
+
+    const blob = buildPDF(withFooter);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'FocusVillain-timetable.pdf';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast('Your timetable PDF is downloading. If nothing happens, open this page in Chrome.');
+  }
+
+  /* =========================================================
+     Goal wizard (chat style questions with polls)
+  ========================================================= */
+  const GOALS = {
+    school: {
+      label: 'Pass my school exams (O/L, A/L)',
+      q: 'Nice! Which stream or level are you in?',
+      opts: ['A/L Biology', 'A/L Maths', 'A/L Commerce', 'A/L Arts', 'A/L Technology', 'O/L'],
+      sq: 'Which subjects do you study? Pick them or add your own.',
+      subj: {
+        'A/L Biology': ['Biology', 'Physics', 'Chemistry'],
+        'A/L Maths': ['Combined Maths', 'Physics', 'Chemistry'],
+        'A/L Commerce': ['Accounting', 'Business Studies', 'Economics'],
+        'A/L Arts': ['Sinhala', 'Political Science', 'Logic', 'History', 'Geography'],
+        'A/L Technology': ['Engineering Technology', 'Science for Technology', 'ICT'],
+        'O/L': ['Maths', 'Science', 'English', 'Sinhala', 'History', 'ICT']
+      },
+      subjDefault: ['Maths', 'Science', 'English']
+    },
+    uni: {
+      label: 'University / degree',
+      q: 'Great. Which field are you studying?',
+      opts: ['Engineering', 'Medicine / Health', 'IT / Computing', 'Business / Management', 'Science', 'Arts / Law'],
+      sq: 'Which modules or subjects are you working on?',
+      subj: {
+        'Engineering': ['Mathematics', 'Mechanics', 'Programming'],
+        'Medicine / Health': ['Anatomy', 'Physiology', 'Biochemistry'],
+        'IT / Computing': ['Programming', 'Databases', 'Networking', 'Maths'],
+        'Business / Management': ['Accounting', 'Marketing', 'Economics'],
+        'Science': ['Physics', 'Chemistry', 'Maths'],
+        'Arts / Law': ['Law', 'Literature', 'History']
+      },
+      subjDefault: ['Core module 1', 'Core module 2']
+    },
+    skill: {
+      label: 'Learn a skill or language',
+      q: 'Cool! What do you want to learn?',
+      opts: ['English', 'Coding', 'Design', 'Music', 'Maths'],
+      sq: 'What parts do you want to practice?',
+      subj: {
+        'English': ['Grammar', 'Speaking', 'Writing', 'Listening'],
+        'Coding': ['Python', 'Web development', 'Problem solving'],
+        'Design': ['Design basics', 'Software practice', 'Portfolio'],
+        'Music': ['Theory', 'Instrument practice'],
+        'Maths': ['Algebra', 'Geometry', 'Calculus']
+      },
+      subjDefault: ['Theory', 'Practice']
+    },
+    career: {
+      label: 'Career, job or business',
+      q: 'What are you working towards?',
+      opts: ['Get a job', 'Grow my business', 'Freelancing', 'Promotion / certification'],
+      sq: 'Which areas or projects will you work on?',
+      subj: {
+        'Get a job': ['Interview prep', 'Resume and portfolio', 'Skills practice'],
+        'Grow my business': ['Marketing', 'Content creation', 'Operations'],
+        'Freelancing': ['Client work', 'Skill practice', 'Marketing'],
+        'Promotion / certification': ['Exam prep', 'Practice tests', 'Work project']
+      },
+      subjDefault: ['Main project', 'Skill practice']
+    },
+    other: {
+      label: 'Something else',
+      q: 'Tell me more about your goal.',
+      opts: [],
+      sq: 'Which topics or tasks do you want to work on? Add your own.',
+      subj: {},
+      subjDefault: []
+    }
+  };
+
+  const WAKE_OPTS = ['04:30', '05:00', '05:30', '06:00', '06:30', '07:00', '08:00'];
+  const BED_OPTS = ['21:30', '22:00', '22:30', '23:00', '23:30', '00:00'];
+  const BEST_LABELS = {
+    early: 'Early morning (5–8 AM)',
+    morning: 'Morning (8 AM–12 PM)',
+    afternoon: 'Afternoon (12–4 PM)',
+    evening: 'Evening (4–8 PM)',
+    night: 'Night (8 PM–12 AM)'
+  };
+  const HOURS_LABELS = { 2: '2 hours', 3: '3 hours', 4: '4 hours', 5: '5 hours', 6: '6 hours', 8: '8 hours' };
+  const ACT_PRESETS = ['Sports', 'Gym', 'Part-time job', 'Tuition', 'Family time', 'Prayer / religious', 'Travel'];
+  const NOTE_EXAMPLES = [
+    'I have a paper on 23 March and I want to prepare for it',
+    'I want to finish the whole syllabus first',
+    'I am weak in one subject and need extra time'
+  ];
+
+  const WZ = { i: 0, a: {} };
+
+  function freshAnswers() {
+    return { subjects: [], classes: [], acts: [] };
+  }
+
+  function chipHTML(label, value, on) {
+    return `<button type="button" class="chip ${on ? 'on' : ''}" data-v="${escapeHTML(value)}">${escapeHTML(label)}</button>`;
+  }
+
+  /* ----- single-choice poll with optional "Other" ----- */
+  function pollStep(box, opts, key, otherKey, placeholder, labels) {
+    const a = WZ.a;
+    box.innerHTML = `
+      <div class="flex flex-wrap gap-2">
+        ${opts.map(o => chipHTML(labels ? labels[o] : o, String(o), String(a[key]) === String(o))).join('')}
+      </div>
+      ${otherKey ? `<input id="pollOther" class="field mt-3 ${a[key] === 'Other' ? '' : 'hidden'}" placeholder="${escapeHTML(placeholder || '')}" value="${escapeHTML(a[otherKey] || '')}">` : ''}`;
+
+    const other = box.querySelector('#pollOther');
+
+    box.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => {
+        const v = b.dataset.v;
+        const prev = a[key];
+        a[key] = (key === 'hours' || key === 'session') ? Number(v) : v;
+
+        if (key === 'detail' && prev !== a[key]) {
+          a.subjects = [];
+          a.classes = [];
+        }
+
+        box.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+
+        if (v === 'Other' && other) {
+          other.classList.remove('hidden');
+          other.focus();
+        } else {
+          if (other) other.classList.add('hidden');
+          setTimeout(wizNext, 220);
+        }
+      };
+    });
+
+    if (other) other.oninput = () => { a[otherKey] = other.value; };
+  }
+
+  /* ----- schedule rows (classes and activities) ----- */
+  function slotRow(kind, i, r, opts) {
+    return `
+      <div class="slot space-y-3" data-k="${kind}" data-i="${i}">
+        ${opts.field ? `<input class="field" data-f="${opts.field}" placeholder="${escapeHTML(opts.placeholder)}" value="${escapeHTML(r[opts.field] || '')}">` : ''}
+        <div class="flex flex-wrap gap-1.5">
+          ${DAY_ORDER.map(d => `<button type="button" class="chip chip-sm ${r.days.includes(d) ? 'on' : ''}" data-day="${d}">${DAY_NAMES[d]}</button>`).join('')}
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="time" class="field" data-f="start" value="${r.start || ''}" aria-label="Start time">
+          <span class="text-xs text-muted">to</span>
+          <input type="time" class="field" data-f="end" value="${r.end || ''}" aria-label="End time">
+          ${opts.removable ? `<button type="button" data-remove class="text-muted hover:text-white px-2" aria-label="Remove"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function bindSlots(box) {
+    box.querySelectorAll('.slot').forEach(el => {
+      const list = el.dataset.k === 'c' ? WZ.a.classes : WZ.a.acts;
+      const r = list[Number(el.dataset.i)];
+
+      el.querySelectorAll('[data-f]').forEach(inp => {
+        inp.addEventListener('input', () => { r[inp.dataset.f] = inp.value; });
+      });
+
+      el.querySelectorAll('[data-day]').forEach(b => {
+        b.onclick = () => {
+          const d = Number(b.dataset.day);
+          r.days = r.days.includes(d) ? r.days.filter(x => x !== d) : [...r.days, d];
+          b.classList.toggle('on');
+        };
+      });
+
+      const rm = el.querySelector('[data-remove]');
+      if (rm) rm.onclick = () => {
+        list.splice(Number(el.dataset.i), 1);
+        renderStepInput();
+      };
+    });
+  }
+
+  /* ----- step renderers ----- */
+  function renderGoal(box) {
+    const a = WZ.a;
+    box.innerHTML = `
+      <div class="flex flex-wrap gap-2">
+        ${Object.entries(GOALS).map(([k, g]) => chipHTML(g.label, k, a.goal === k)).join('')}
+      </div>
+      <input id="goalOther" class="field mt-3 ${a.goal === 'other' ? '' : 'hidden'}" placeholder="Type your goal..." value="${escapeHTML(a.goalOther || '')}">`;
+
+    const other = box.querySelector('#goalOther');
+
+    box.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => {
+        const prev = a.goal;
+        a.goal = b.dataset.v;
+        if (prev !== a.goal) {
+          a.detail = '';
+          a.detailOther = '';
+          a.subjects = [];
+          a.classes = [];
+        }
+        box.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+        if (a.goal === 'other') {
+          other.classList.remove('hidden');
+          other.focus();
+        } else {
+          other.classList.add('hidden');
+          setTimeout(wizNext, 220);
+        }
+      };
+    });
+
+    other.oninput = () => { a.goalOther = other.value; };
+  }
+
+  function renderDetail(box) {
+    const a = WZ.a;
+    if (a.goal === 'other') {
+      a.detail = 'Other';
+      box.innerHTML = `<textarea id="detailOther" class="field" rows="3" placeholder="e.g. Prepare for my driving test"></textarea>`;
+      const t = box.querySelector('#detailOther');
+      t.value = a.detailOther || '';
+      t.oninput = () => { a.detailOther = t.value; };
+      return;
+    }
+    pollStep(box, [...GOALS[a.goal].opts, 'Other'], 'detail', 'detailOther', 'Type it here...');
+  }
+
+  function suggestions() {
+    const a = WZ.a;
+    const g = GOALS[a.goal];
+    if (!g) return [];
+    return (g.subj && g.subj[a.detail]) || g.subjDefault || [];
+  }
+
+  function renderSubjects(box) {
+    const a = WZ.a;
+    const all = [...new Set([...suggestions(), ...a.subjects])];
+
+    box.innerHTML = `
+      <div class="flex flex-wrap gap-2">
+        ${all.map(s => chipHTML(s, s, a.subjects.includes(s))).join('')}
+      </div>
+      <div class="flex gap-2 mt-3">
+        <input id="subNew" class="field" placeholder="Add your own...">
+        <button type="button" id="subAdd" class="primary-btn rounded-xl px-5 text-sm font-bold">Add</button>
+      </div>`;
+
+    box.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => {
+        const s = b.dataset.v;
+        a.subjects = a.subjects.includes(s) ? a.subjects.filter(x => x !== s) : [...a.subjects, s];
+        b.classList.toggle('on');
+      };
+    });
+
+    const add = () => {
+      const v = box.querySelector('#subNew').value.trim();
+      if (!v) return;
+      if (!a.subjects.some(s => s.toLowerCase() === v.toLowerCase())) a.subjects.push(v);
+      renderStepInput();
+    };
+    box.querySelector('#subAdd').onclick = add;
+    box.querySelector('#subNew').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); add(); }
+    });
+  }
+
+  function ensureClassRows() {
+    const a = WZ.a;
+    a.classes = a.classes.filter(r => a.subjects.includes(r.subject));
+    a.subjects.forEach(s => {
+      if (!a.classes.some(r => r.subject === s)) {
+        a.classes.push({ subject: s, teacher: '', days: [], start: '', end: '' });
+      }
+    });
+  }
+
+  function renderClasses(box) {
+    const a = WZ.a;
+    ensureClassRows();
+
+    box.innerHTML = `
+      <p class="text-[11px] text-muted mb-3">Leave the days empty if you have no class for that subject.</p>
+      <div class="space-y-4">
+        ${a.subjects.map(s => {
+          const rows = a.classes.map((r, i) => ({ r, i })).filter(x => x.r.subject === s);
+          return `
+            <div>
+              <p class="text-sm font-bold mb-2"><i class="fa-solid fa-book-open text-violet text-xs mr-2"></i>${escapeHTML(s)}</p>
+              <div class="space-y-2">
+                ${rows.map((x, n) => slotRow('c', x.i, x.r, { field: 'teacher', placeholder: 'Teacher name', removable: n > 0 })).join('')}
+              </div>
+              <button type="button" data-addclass="${escapeHTML(s)}" class="text-xs text-violet hover:text-white mt-2">
+                <i class="fa-solid fa-plus mr-1"></i> Add another class time
+              </button>
+            </div>`;
+        }).join('')}
+      </div>
+      <button type="button" id="noClasses" class="ghost-btn rounded-xl px-4 py-2.5 text-xs font-semibold mt-4">
+        I don't attend any classes
+      </button>`;
+
+    bindSlots(box);
+
+    box.querySelectorAll('[data-addclass]').forEach(btn => {
+      btn.onclick = () => {
+        a.classes.push({ subject: btn.dataset.addclass, teacher: '', days: [], start: '', end: '' });
+        renderStepInput();
+      };
+    });
+
+    box.querySelector('#noClasses').onclick = () => {
+      a.classes.forEach(r => { r.days = []; r.start = ''; r.end = ''; r.teacher = ''; });
+      wizNext();
+    };
+  }
+
+  function renderSleep(box) {
+    const a = WZ.a;
+    const row = (key, label, opts) => `
+      <div class="mb-4">
+        <p class="text-xs font-semibold mb-2">${label}</p>
+        <div class="flex flex-wrap gap-2" data-k="${key}">
+          ${opts.map(o => chipHTML(fmt12(o), o, a[key] === o)).join('')}
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="text-xs text-muted shrink-0">or pick a time</span>
+          <input type="time" class="field !w-auto" data-t="${key}" value="${a[key] || ''}">
+        </div>
+      </div>`;
+
+    box.innerHTML = row('wake', 'I wake up at', WAKE_OPTS) + row('bed', 'I go to sleep at', BED_OPTS);
+
+    box.querySelectorAll('[data-k] .chip').forEach(b => {
+      b.onclick = () => {
+        const k = b.parentElement.dataset.k;
+        a[k] = b.dataset.v;
+        b.parentElement.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+        box.querySelector(`[data-t="${k}"]`).value = b.dataset.v;
+      };
+    });
+
+    box.querySelectorAll('[data-t]').forEach(inp => {
+      inp.oninput = () => {
+        const k = inp.dataset.t;
+        a[k] = inp.value;
+        box.querySelectorAll(`[data-k="${k}"] .chip`).forEach(x => x.classList.toggle('on', x.dataset.v === inp.value));
+      };
+    });
+  }
+
+  function renderBest(box) {
+    pollStep(box, Object.keys(BEST_LABELS), 'best', null, '', BEST_LABELS);
+  }
+
+  function renderHours(box) {
+    pollStep(box, [2, 3, 4, 5, 6, 8], 'hours', null, '', HOURS_LABELS);
+  }
+
+  function renderActs(box) {
+    const a = WZ.a;
+
+    box.innerHTML = `
+      <div class="flex flex-wrap gap-2 mb-3">
+        ${ACT_PRESETS.map(p => `<button type="button" class="chip chip-sm" data-preset="${escapeHTML(p)}">+ ${escapeHTML(p)}</button>`).join('')}
+      </div>
+      <div class="space-y-2">
+        ${a.acts.map((r, i) => slotRow('x', i, r, { field: 'name', placeholder: 'Activity name', removable: true })).join('')}
+      </div>
+      <div class="flex flex-wrap gap-3 mt-3">
+        <button type="button" id="addAct" class="primary-btn rounded-xl px-4 py-2.5 text-xs font-bold">
+          <i class="fa-solid fa-plus mr-1"></i> Add more
+        </button>
+        <button type="button" id="noActs" class="ghost-btn rounded-xl px-4 py-2.5 text-xs font-semibold">
+          No other activities
+        </button>
+      </div>`;
+
+    bindSlots(box);
+
+    box.querySelectorAll('[data-preset]').forEach(b => {
+      b.onclick = () => {
+        a.acts.push({ name: b.dataset.preset, days: [], start: '', end: '' });
+        renderStepInput();
+      };
+    });
+
+    box.querySelector('#addAct').onclick = () => {
+      a.acts.push({ name: '', days: [], start: '', end: '' });
+      renderStepInput();
+    };
+
+    box.querySelector('#noActs').onclick = () => {
+      a.acts = [];
+      wizNext();
+    };
+  }
+
+  function renderNote(box) {
+    const a = WZ.a;
+    box.innerHTML = `
+      <textarea id="noteText" class="field" rows="3" placeholder="e.g. I have paper 23 in March and I want to prepare for that"></textarea>
+      <div class="flex flex-wrap gap-2 mt-3">
+        ${NOTE_EXAMPLES.map(t => `<button type="button" class="chip chip-sm" data-ex="${escapeHTML(t)}">${escapeHTML(t)}</button>`).join('')}
+      </div>
+      <label class="block text-xs font-semibold mt-4 mb-2">Exam or target date (optional)</label>
+      <input id="targetDate" type="date" class="field">`;
+
+    const t = box.querySelector('#noteText');
+    const d = box.querySelector('#targetDate');
+    t.value = a.note || '';
+    d.value = a.targetDate || '';
+    t.oninput = () => { a.note = t.value; };
+    d.oninput = () => { a.targetDate = d.value; };
+
+    box.querySelectorAll('[data-ex]').forEach(b => {
+      b.onclick = () => {
+        t.value = t.value ? `${t.value.trim()} ${b.dataset.ex}` : b.dataset.ex;
+        a.note = t.value;
+      };
+    });
+  }
+
+  const WEAK_NONE = 'None, all equal';
+  const SESSION_LABELS = { 25: '25 minutes', 40: '40 minutes', 50: '50 minutes', 60: '60 minutes', 90: '90 minutes' };
+
+  function renderWeak(box) {
+    const a = WZ.a;
+    const opts = [...a.subjects, WEAK_NONE];
+
+    box.innerHTML = `
+      <div class="flex flex-wrap gap-2">
+        ${opts.map(o => chipHTML(o, o, a.weak === o)).join('')}
+      </div>
+      <input id="weakTopic" class="field mt-3" placeholder="Specific topic (optional), e.g. Organic chemistry" value="${escapeHTML(a.weakTopic || '')}">`;
+
+    box.querySelectorAll('.chip').forEach(b => {
+      b.onclick = () => {
+        a.weak = b.dataset.v;
+        box.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+      };
+    });
+
+    box.querySelector('#weakTopic').oninput = e => { a.weakTopic = e.target.value; };
+  }
+
+  function renderSession(box) {
+    pollStep(box, [25, 40, 50, 60, 90], 'session', null, '', SESSION_LABELS);
+  }
+
+  /* ----- step definitions ----- */
+  const STEPS = [
+    {
+      q: () => 'Hi! 👋 What is your goal?',
+      render: renderGoal,
+      validate: a => !a.goal ? 'Pick your goal first.'
+        : (a.goal === 'other' && !(a.goalOther || '').trim()) ? 'Type your goal.' : null,
+      summary: a => goalName(a)
+    },
+    {
+      q: a => GOALS[a.goal].q,
+      render: renderDetail,
+      validate: a => !a.detail ? 'Choose one option.'
+        : (a.detail === 'Other' && !(a.detailOther || '').trim()) ? 'Please type it.' : null,
+      summary: a => detailName(a)
+    },
+    {
+      q: a => GOALS[a.goal].sq,
+      render: renderSubjects,
+      validate: a => a.subjects.length ? null : 'Pick at least one.',
+      summary: a => a.subjects.join(', ')
+    },
+    {
+      q: () => 'Which subject is the hardest for you? I will give it extra time. 💪',
+      render: renderWeak,
+      validate: a => (a.weak && (a.subjects.includes(a.weak) || a.weak === WEAK_NONE)) ? null : 'Choose one option.',
+      summary: a => `${a.weak}${(a.weakTopic || '').trim() ? ' – ' + a.weakTopic.trim() : ''}`
+    },
+    {
+      q: () => 'Which teacher or class do you go to for each one? Pick the class days and the time. 🏫',
+      render: renderClasses,
+      validate: a => {
+        for (const r of a.classes) {
+          if (!r.days.length) continue;
+          if (!r.start || !r.end) return `Add the class time for ${r.subject}.`;
+          if (toMin(r.start) >= toMin(r.end)) return `End time must be after start time (${r.subject}).`;
+        }
+        return null;
+      },
+      summary: a => {
+        const rows = a.classes.filter(r => r.days.length && r.start && r.end);
+        if (!rows.length) return 'No classes';
+        return rows.map(r =>
+          `${r.subject}${r.teacher ? ' – ' + r.teacher : ''}: ${r.days.map(d => DAY_NAMES[d]).join(', ')} ${fmt12(r.start)}–${fmt12(r.end)}`
+        ).join('\n');
+      }
+    },
+    {
+      q: () => 'What time do you wake up, and when do you go to sleep? ⏰',
+      render: renderSleep,
+      validate: a => (!a.wake || !a.bed) ? 'Choose your wake up and sleep time.' : null,
+      summary: a => `Wake ${fmt12(a.wake)} · Sleep ${fmt12(a.bed)}`
+    },
+    {
+      q: () => 'Which time of the day do you focus best? ⚡',
+      render: renderBest,
+      validate: a => a.best ? null : 'Choose one option.',
+      summary: a => BEST_LABELS[a.best]
+    },
+    {
+      q: () => 'How many hours can you give to your goal each day?',
+      render: renderHours,
+      validate: a => a.hours ? null : 'Choose one option.',
+      summary: a => `${a.hours} hours per day`
+    },
+    {
+      q: () => 'How long can you focus comfortably in one session?',
+      render: renderSession,
+      validate: a => a.session ? null : 'Choose one option.',
+      summary: a => SESSION_LABELS[a.session]
+    },
+    {
+      q: () => 'Any other activities in your day? Sports, tuition, work, prayer... Add the days and time. You can add as many as you want.',
+      render: renderActs,
+      validate: a => {
+        a.acts = a.acts.filter(r => (r.name || '').trim() || r.days.length || r.start || r.end);
+        for (const r of a.acts) {
+          if (!(r.name || '').trim()) return 'Give each activity a name.';
+          if (!r.days.length) return `Pick the days for ${r.name}.`;
+          if (!r.start || !r.end) return `Add the time for ${r.name}.`;
+          if (toMin(r.start) >= toMin(r.end)) return `End time must be after start time (${r.name}).`;
+        }
+        return null;
+      },
+      summary: a => a.acts.length
+        ? a.acts.map(r => `${r.name}: ${r.days.map(d => DAY_NAMES[d]).join(', ')} ${fmt12(r.start)}–${fmt12(r.end)}`).join('\n')
+        : 'No other activities'
+    },
+    {
+      q: () => 'Last one! Anything else I should know? For example: "I have paper 23 in March and I want to prepare for that." 📝',
+      render: renderNote,
+      validate: () => null,
+      summary: a => {
+        const parts = [];
+        if ((a.note || '').trim()) parts.push(a.note.trim());
+        if (a.targetDate) parts.push(`Target date: ${a.targetDate}`);
+        return parts.length ? parts.join('\n') : 'Nothing else';
+      }
+    }
+  ];
+
+  function renderStepInput() {
+    STEPS[WZ.i].render($('wizInput'));
+  }
+
+  function renderWizard() {
+    const total = STEPS.length;
+    const a = WZ.a;
+    const log = $('wizLogInner');
+    log.innerHTML = '';
+
+    const addBubble = (cls, text) => {
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = text;
+      log.appendChild(div);
+    };
+
+    for (let k = 0; k <= WZ.i; k++) {
+      addBubble('bubble-app', STEPS[k].q(a));
+      if (k < WZ.i) addBubble('bubble-user', STEPS[k].summary(a));
+    }
+
+    $('wizStepLabel').textContent = `Question ${WZ.i + 1} of ${total}`;
+    $('wizBar').style.width = `${Math.round((WZ.i + 1) / total * 100)}%`;
+    $('wizBack').disabled = WZ.i === 0;
+    $('wizNextBtn').innerHTML = WZ.i === total - 1
+      ? 'Create my timetable <i class="fa-solid fa-wand-magic-sparkles ml-1"></i>'
+      : 'Next <i class="fa-solid fa-arrow-right ml-1"></i>';
+
+    renderStepInput();
+    $('wizInput').scrollTop = 0;
+    $('wizLog').scrollTop = $('wizLog').scrollHeight;
+  }
+
+  function openWizard() {
+    WZ.a = profile ? JSON.parse(JSON.stringify(profile)) : freshAnswers();
+    WZ.a.subjects = WZ.a.subjects || [];
+    WZ.a.classes = WZ.a.classes || [];
+    WZ.a.acts = WZ.a.acts || [];
+    WZ.i = 0;
+    $('wizard').classList.remove('hidden');
+    $('wizard').classList.add('flex');
+    renderWizard();
+  }
+
+  function closeWizard() {
+    $('wizard').classList.add('hidden');
+    $('wizard').classList.remove('flex');
+  }
+
+  function wizBack() {
+    if (WZ.i > 0) {
+      WZ.i--;
+      renderWizard();
+    }
+  }
+
+  function wizNext() {
+    const step = STEPS[WZ.i];
+    const error = step.validate(WZ.a);
+    if (error) {
+      showToast(error);
+      return;
+    }
+    if (WZ.i === STEPS.length - 1) {
+      finishWizard();
+      return;
+    }
+    WZ.i++;
+    renderWizard();
+  }
+
+  function finishWizard() {
+    profile = JSON.parse(JSON.stringify(WZ.a));
+    plan = buildPlan(profile);
+    rating = 0;
+
+    store.set(K_PROFILE, profile);
+    store.set(K_PLAN, plan);
+    store.set(K_RATING, rating);
+
+    weekDay = new Date().getDay();
+    loadTodayTasks();
+    renderAll();
+    closeWizard();
+    showToast('Your timetable is ready! 🎉');
+    $('schedule').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* =========================================================
+     Mentor modal
+  ========================================================= */
+  function openMentor() {
+    $('mentorModal').classList.remove('hidden');
+    $('mentorModal').classList.add('flex');
+    updateProgress();
+  }
+
+  function closeMentor() {
+    $('mentorModal').classList.add('hidden');
+    $('mentorModal').classList.remove('flex');
+  }
+
+  $('mentorModal').addEventListener('click', event => {
+    if (event.target === $('mentorModal')) closeMentor();
+  });
+
+  $('taskModal').addEventListener('click', event => {
+    if (event.target === $('taskModal')) closeTaskModal();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { closeMentor(); closeTaskModal(); }
+  });
+
+  /* =========================================================
+     Focus timer
+  ========================================================= */
+  function updateTimerDisplay() {
+    const minutes = Math.floor(timerSeconds / 60);
+    const seconds = timerSeconds % 60;
+    const value = `${pad(minutes)}:${pad(seconds)}`;
+
+    $('timerDisplay').textContent = value;
+    $('timerStat').textContent = value;
+    document.title = timerRunning
+      ? `${value} · FocusVillain`
+      : 'FocusVillain — Your Study Command Center';
+  }
+
+  function startFocus() {
+    document.querySelector('.main-layout').scrollIntoView({ behavior: 'smooth' });
+    $('timerDisplay').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!timerRunning) toggleTimer();
+  }
+
+  function toggleTimer() {
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      $('timerButton').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Resume focus';
+      $('timerStatus').textContent = 'Paused';
+      $('timerMessage').textContent = 'Take a breath. Resume when ready.';
+      $('timerStat').textContent = 'Paused';
+      return;
+    }
+
+    timerRunning = true;
+    $('timerButton').innerHTML = '<i class="fa-solid fa-pause mr-2"></i> Pause session';
+    $('timerStatus').textContent = 'Focus session in progress';
+    $('timerMessage').textContent = 'One thing at a time. You’ve got this.';
+
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        timerSeconds = 0;
+        updateTimerDisplay();
+        $('timerButton').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Start again';
+        $('timerStatus').textContent = 'Session complete';
+        $('timerMessage').textContent = 'Great job! Take a short break.';
+        showToast('Focus session complete! Take a short break.');
+      }
+    }, 1000);
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerSeconds = 25 * 60;
+    updateTimerDisplay();
+    $('timerButton').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Start focus';
+    $('timerStatus').textContent = 'Ready for a focus session';
+    $('timerMessage').textContent = 'Ready when you are.';
+  }
+
+  /* =========================================================
+     Boot
+  ========================================================= */
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    link.addEventListener('click', () => {
+      if (link.tagName === 'A') {
+        document.querySelectorAll('.sidebar-link').forEach(item => {
+          item.classList.remove('active');
+        });
+        link.classList.add('active');
+      }
+    });
+  });
+
+  $('currentDate').textContent = new Intl.DateTimeFormat('en', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(new Date());
+
+  function renderAll() {
+    renderTasks();
+    renderWeek();
+    renderGoalCard();
+  }
+
+  initCharts();
+  loadTodayTasks();
+  renderAll();
+  updateTimerDisplay();
+
+  // First visit: ask the goal question straight away
+  if (!profile) setTimeout(openWizard, 400);
+</script>
+
+</body>
+</html>
