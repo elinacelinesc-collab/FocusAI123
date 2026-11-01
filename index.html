@@ -6,13 +6,14 @@
     <title>FocusVillain - Login</title>
     <style>
         body { background-color: #1a1a2e; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .box { background: #1e1e2f; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; margin: auto; border: 1px solid #3b3b5c; }
+        .box { background: #1e1e2f; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; margin: auto; border: 1px solid #3b3b5c; margin-bottom: 20px; }
         button { background: #8a2be2; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; font-weight: bold; }
         button:hover { background: #6a1b9a; }
         button:disabled { background: #555; cursor: not-allowed; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #3b3b5c; background: #2a2a40; color: white; box-sizing: border-box; }
     
-        #detailsForm { display: none; } 
+        /* Forms හංගලා තියෙන්නේ මුලින් */
+        #detailsForm, #aiQuizForm { display: none; } 
     </style>
 </head>
 <body>
@@ -25,7 +26,7 @@
         <p id="status" style="color: #00ffcc; margin-top: 15px; font-size: 14px;"></p>
     </div>
 
-    <!-- 2. DETAILS FORM -->
+    <!-- 2. DETAILS FORM (ප්‍රශ්න 4) -->
     <div class="box" id="detailsForm">
         <h2>Tell us about you</h2>
         
@@ -35,14 +36,30 @@
         
         <select id="userGoal">
             <option value="" disabled selected>What is your main goal?</option>
-            <option value="Academic">Academic (School/Uni)</option>
-            <option value="Business">Business / Entrepreneurship</option>
-            <option value="Tech">Tech / Programming</option>
-            <option value="Creative">Creative Arts / Design</option>
-            <option value="Health">Health / Fitness</option>
+            <option value="Exams">Exams (School/University)</option>
+            <option value="Tech">Tech / Coding</option>
+            <option value="Trading">Trading / Finance</option>
+            <option value="Fitness">Fitness / Health</option>
+            <option value="Business">Business / Startup</option>
+            <option value="Creative">Creative (Art, Music, Writing)</option>
+            <option value="Language">Language Learning</option>
+            <option value="Career">Career / Jobs</option>
+            <option value="Personal Growth">Personal Growth</option>
+            <option value="Other">Other</option>
         </select>
         
         <button id="submitDetailsBtn">Submit & Continue</button>
+    </div>
+
+    <!-- 3. AI QUIZ FORM -->
+    <div class="box" id="aiQuizForm">
+        <h2>AI Generated Quiz</h2>
+        <p style="color: #a0a0a0; font-size: 14px;">Let's customize your study plan</p>
+        
+        <!-- ප්‍රශ්න පෙන්නන තැන -->
+        <div id="quizContainer" style="text-align: left;"></div>
+        
+        <button id="submitQuizBtn" style="margin-top: 20px;">Finish & Save</button>
     </div>
 
     <!-- Firebase SDK -->
@@ -50,15 +67,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        
         const firebaseConfig = {
-  apiKey: "AIzaSyBe0ia1FGw2poDTonlXi0V2LvRQGwi8CX4",
-  authDomain: "focusai-7fe3c.firebaseapp.com",
-  projectId: "focusai-7fe3c",
-  storageBucket: "focusai-7fe3c.firebasestorage.app",
-  messagingSenderId: "761646577346",
-  appId: "1:761646577346:web:42d5c1b2bd9fd8fe846d5b",
-  measurementId: "G-0T6JWZRD7X"
+            apiKey: "AIzaSyBe0ia1FGw2poDTonlXi0V2LvRQGwi8CX4",
+            authDomain: "focusai-7fe3c.firebaseapp.com",
+            projectId: "focusai-7fe3c",
+            storageBucket: "focusai-7fe3c.firebasestorage.app",
+            messagingSenderId: "761646577346",
+            appId: "1:761646577346:web:42d5c1b2bd9fd8fe846d5b",
+            measurementId: "G-0T6JWZRD7X"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -66,74 +82,153 @@
         const provider = new GoogleAuthProvider();
 
         let currentUser = null; 
-        
-document.getElementById('submitDetailsBtn').addEventListener('click', async () => {
-    const name = document.getElementById('userName').value;
-    const country = document.getElementById('userCountry').value;
-    const age = document.getElementById('userAge').value;
-    const goal = document.getElementById('userGoal').value;
+        let generatedQuestions = []; // ප්‍රශ්න Save කරගන්න
 
-    if(!name || !country || !age || !goal) {
-        alert("Please fill all the details!");
-        return;
-    }
-
-    const btn = document.getElementById('submitDetailsBtn');
-    btn.innerText = "Analyzing your goal...";
-    btn.disabled = true;
-
-    try {
-        const token = await currentUser.getIdToken();
-
-        // 1. Onboard API එකට යවනවා
-        const onboardRes = await fetch('https://focusvillain-server.onrender.com/api/onboard', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                userName: name,
-                userCountry: country,
-                userAge: age,
-                userGoal: goal,
-                lang: 'en'
-            })
+        // 1. Google Login එක
+        document.getElementById('googleBtn').addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    currentUser = result.user;
+                    document.getElementById('loginBox').style.display = 'none';
+                    document.getElementById('detailsForm').style.display = 'block';
+                    document.getElementById('userName').value = result.user.displayName || "";
+                }).catch((error) => {
+                    document.getElementById('status').innerText = "Error: " + error.message;
+                });
         });
 
-        const onboardData = await onboardRes.json();
+        // 2. ප්‍රශ්න 4 Submit කරන කොටස
+        document.getElementById('submitDetailsBtn').addEventListener('click', async () => {
+            const name = document.getElementById('userName').value;
+            const country = document.getElementById('userCountry').value;
+            const age = document.getElementById('userAge').value;
+            const goal = document.getElementById('userGoal').value;
 
-        if (!onboardRes.ok) {
-            throw new Error(onboardData.error || "Onboard failed");
-        }
+            if(!name || !country || !age || !goal) {
+                alert("Please fill all the details!");
+                return;
+            }
 
-        // 2. Quiz ප්‍රශ්න ඉල්ලනවා
-        btn.innerText = "Generating your quiz...";
-        
-        const quizRes = await fetch('https://focusvillain-server.onrender.com/api/quiz/generate', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            const btn = document.getElementById('submitDetailsBtn');
+            btn.innerText = "Analyzing your goal...";
+            btn.disabled = true;
+
+            try {
+                const token = await currentUser.getIdToken();
+
+                // Onboard API එකට යවනවා
+                const onboardRes = await fetch('https://focusvillain-server.onrender.com/api/onboard', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        userName: name,
+                        userCountry: country,
+                        userAge: age,
+                        userGoal: goal,
+                        lang: 'en'
+                    })
+                });
+
+                const onboardData = await onboardRes.json();
+                if (!onboardRes.ok) throw new Error(onboardData.error || "Onboard failed");
+
+                // Quiz ප්‍රශ්න ඉල්ලනවා
+                btn.innerText = "Generating your quiz...";
+                
+                const quizRes = await fetch('https://focusvillain-server.onrender.com/api/quiz/generate', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const quizData = await quizRes.json();
+                if (!quizRes.ok) throw new Error(quizData.error || "Quiz generation failed");
+
+                // ප්‍රශ්න ආවම ඒක UI එකේ පෙන්නනවා
+                generatedQuestions = quizData.questions;
+                showQuizUI(generatedQuestions);
+
+            } catch (error) {
+                console.error(error);
+                alert("Error: " + error.message);
+                btn.innerText = "Submit & Continue";
+                btn.disabled = false;
+            }
         });
-        
-        const quizData = await quizRes.json();
-        
-        if (!quizRes.ok) {
-            throw new Error(quizData.error || "Quiz generation failed");
+
+        // 3. Quiz UI එක හදන Function එක
+        function showQuizUI(questions) {
+            document.getElementById('detailsForm').style.display = 'none';
+            document.getElementById('aiQuizForm').style.display = 'block';
+
+            const container = document.getElementById('quizContainer');
+            container.innerHTML = ''; // හිස් කරනවා
+
+            questions.forEach((q, index) => {
+                let html = `<div style="margin-bottom: 20px;">
+                                <p style="font-weight: bold; margin-bottom: 10px;">${index + 1}. ${q.question}</p>`;
+                
+                q.options.forEach(opt => {
+                    html += `<label style="display: block; margin-bottom: 5px; cursor: pointer;">
+                                <input type="radio" name="q_${q.id}" value="${opt}" style="width: auto; margin-right: 10px;">
+                                ${opt}
+                             </label>`;
+                });
+                html += `</div>`;
+                container.innerHTML += html;
+            });
         }
 
-        // 3. ප්‍රශ්න ආවම, ඒක Form එකේ පෙන්නනවා (මේක අපි ඊළඟට ලස්සනට හදමු)
-        alert("Success! We generated " + quizData.questions.length + " questions for you.");
-        console.log(quizData.questions); // කොන්සෝල් එකේ බලාගන්න පුළුවන් ප්‍රශ්න ටික
+        // 4. Quiz එක ඉවර කරලා Save කරන කොටස
+        document.getElementById('submitQuizBtn').addEventListener('click', async () => {
+            const answers = [];
+            let allAnswered = true;
 
-    } catch (error) {
-        console.error(error);
-        alert("Error: " + error.message);
-    } finally {
-        btn.innerText = "Submit & Continue";
-        btn.disabled = false;
-    }
-});
-        
+            generatedQuestions.forEach(q => {
+                const selected = document.querySelector(`input[name="q_${q.id}"]:checked`);
+                if (selected) {
+                    answers.push({ id: q.id, question: q.question, answer: selected.value });
+                } else {
+                    allAnswered = false;
+                }
+            });
+
+            if (!allAnswered) {
+                alert("Please answer all questions!");
+                return;
+            }
+
+            const btn = document.getElementById('submitQuizBtn');
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                const token = await currentUser.getIdToken();
+                const res = await fetch('https://focusvillain-server.onrender.com/api/quiz/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ answers })
+                });
+
+                if (res.ok) {
+                    alert("Success! Your custom Time Table is ready. (Next Step: Dashboard)");
+                    // ඊළඟට Dashboard එකට යන කෝඩ් එක මෙතනට දාමු
+                } else {
+                    throw new Error("Failed to save answers");
+                }
+            } catch (error) {
+                alert("Error: " + error.message);
+            } finally {
+                btn.innerText = "Finish & Save";
+                btn.disabled = false;
+            }
+        });
+
     </script>
 </body>
 </html>
