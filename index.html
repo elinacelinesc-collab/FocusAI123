@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusVillain - Login</title>
+    <title>FocusVillain - Onboarding</title>
     <style>
         body { background-color: #1a1a2e; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .box { background: #1e1e2f; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; margin: auto; border: 1px solid #3b3b5c; margin-bottom: 20px; }
+        .box { background: #1e1e2f; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; margin: auto; border: 1px solid #3b3b5c; margin-bottom: 20px; }
         button { background: #8a2be2; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; font-weight: bold; }
         button:hover { background: #6a1b9a; }
         button:disabled { background: #555; cursor: not-allowed; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #3b3b5c; background: #2a2a40; color: white; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #3b3b5c; background: #2a2a40; color: white; box-sizing: border-box; font-size: 15px; }
     
         /* Forms හංගලා තියෙන්නේ මුලින් */
         #detailsForm, #aiQuizForm { display: none; } 
+        
+        /* Quiz ප්‍රශ්න වලට අදාළ ස්ටයිල් */
+        .question-block { margin-bottom: 20px; text-align: left; background: #2a2a40; padding: 15px; border-radius: 8px; }
+        .question-title { font-weight: bold; margin-bottom: 10px; font-size: 15px; color: #00ffcc; }
+        .radio-label { display: block; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
+        .radio-label input { width: auto; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -26,7 +32,7 @@
         <p id="status" style="color: #00ffcc; margin-top: 15px; font-size: 14px;"></p>
     </div>
 
-    <!-- 2. DETAILS FORM (ප්‍රශ්න 4) -->
+    <!-- 2. DETAILS FORM -->
     <div class="box" id="detailsForm">
         <h2>Tell us about you</h2>
         
@@ -37,13 +43,13 @@
         <select id="userGoal">
             <option value="" disabled selected>What is your main goal?</option>
             <option value="Exams">Exams (School/University)</option>
-            <option value="Tech">Tech / Coding</option>
-            <option value="Trading">Trading / Finance</option>
-            <option value="Fitness">Fitness / Health</option>
-            <option value="Business">Business / Startup</option>
+            <option value="Tech / Coding">Tech / Coding</option>
+            <option value="Trading / Finance">Trading / Finance</option>
+            <option value="Fitness / Health">Fitness / Health</option>
+            <option value="Business / Startup">Business / Startup</option>
             <option value="Creative">Creative (Art, Music, Writing)</option>
             <option value="Language">Language Learning</option>
-            <option value="Career">Career / Jobs</option>
+            <option value="Career / Jobs">Career / Jobs</option>
             <option value="Personal Growth">Personal Growth</option>
             <option value="Other">Other</option>
         </select>
@@ -54,18 +60,17 @@
     <!-- 3. AI QUIZ FORM -->
     <div class="box" id="aiQuizForm">
         <h2>AI Generated Quiz</h2>
-        <p style="color: #a0a0a0; font-size: 14px;">Let's customize your study plan</p>
+        <p style="color: #a0a0a0; font-size: 14px;">Answer these to customize your plan</p>
         
-        <!-- ප්‍රශ්න පෙන්නන තැන -->
-        <div id="quizContainer" style="text-align: left;"></div>
+        <div id="quizContainer"></div>
         
-        <button id="submitQuizBtn" style="margin-top: 20px;">Finish & Save</button>
+        <button id="submitQuizBtn">Finish & Save</button>
     </div>
 
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBe0ia1FGw2poDTonlXi0V2LvRQGwi8CX4",
@@ -82,7 +87,7 @@
         const provider = new GoogleAuthProvider();
 
         let currentUser = null; 
-        let generatedQuestions = []; // ප්‍රශ්න Save කරගන්න
+        let generatedQuestions = [];
 
         // 1. Google Login එක
         document.getElementById('googleBtn').addEventListener('click', () => {
@@ -110,7 +115,7 @@
             }
 
             const btn = document.getElementById('submitDetailsBtn');
-            btn.innerText = "Analyzing your goal...";
+            btn.innerText = "Analyzing goal (Wait ~30s)...";
             btn.disabled = true;
 
             try {
@@ -136,7 +141,7 @@
                 if (!onboardRes.ok) throw new Error(onboardData.error || "Onboard failed");
 
                 // Quiz ප්‍රශ්න ඉල්ලනවා
-                btn.innerText = "Generating your quiz...";
+                btn.innerText = "Generating quiz...";
                 
                 const quizRes = await fetch('https://focusvillain-server.onrender.com/api/quiz/generate', {
                     method: 'POST',
@@ -164,15 +169,15 @@
             document.getElementById('aiQuizForm').style.display = 'block';
 
             const container = document.getElementById('quizContainer');
-            container.innerHTML = ''; // හිස් කරනවා
+            container.innerHTML = ''; 
 
             questions.forEach((q, index) => {
-                let html = `<div style="margin-bottom: 20px;">
-                                <p style="font-weight: bold; margin-bottom: 10px;">${index + 1}. ${q.question}</p>`;
+                let html = `<div class="question-block">
+                                <div class="question-title">${index + 1}. ${q.question}</div>`;
                 
                 q.options.forEach(opt => {
-                    html += `<label style="display: block; margin-bottom: 5px; cursor: pointer;">
-                                <input type="radio" name="q_${q.id}" value="${opt}" style="width: auto; margin-right: 10px;">
+                    html += `<label class="radio-label">
+                                <input type="radio" name="q_${q.id}" value="${opt}">
                                 ${opt}
                              </label>`;
                 });
@@ -216,8 +221,7 @@
                 });
 
                 if (res.ok) {
-                    alert("Success! Your custom Time Table is ready. (Next Step: Dashboard)");
-                    // ඊළඟට Dashboard එකට යන කෝඩ් එක මෙතනට දාමු
+                    alert("Success! Your custom plan is ready. Next: Dashboard!");
                 } else {
                     throw new Error("Failed to save answers");
                 }
