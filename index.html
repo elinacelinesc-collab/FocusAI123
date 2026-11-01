@@ -65,77 +65,75 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        let currentUser = null; // ලොග් වුණු කෙනාගේ විස්තර මතක තියාගන්න
+        let currentUser = null; 
+        
+document.getElementById('submitDetailsBtn').addEventListener('click', async () => {
+    const name = document.getElementById('userName').value;
+    const country = document.getElementById('userCountry').value;
+    const age = document.getElementById('userAge').value;
+    const goal = document.getElementById('userGoal').value;
 
-        // Google Login
-        document.getElementById('googleBtn').addEventListener('click', () => {
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    currentUser = result.user; // යූසර්ව මතක තියාගන්නවා
-                    
-                    // Form එක පෙන්නන්න
-                    document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('detailsForm').style.display = 'block';
-                    
-                    // ඔයාගේ නම ඔටෝමැටිකලි දාන්න
-                    document.getElementById('userName').value = result.user.displayName || "";
-                }).catch((error) => {
-                    document.getElementById('status').innerText = "Error: " + error.message;
-                });
+    if(!name || !country || !age || !goal) {
+        alert("Please fill all the details!");
+        return;
+    }
+
+    const btn = document.getElementById('submitDetailsBtn');
+    btn.innerText = "Analyzing your goal...";
+    btn.disabled = true;
+
+    try {
+        const token = await currentUser.getIdToken();
+
+        // 1. Onboard API එකට යවනවා
+        const onboardRes = await fetch('https://focusvillain-server.onrender.com/api/onboard', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                userName: name,
+                userCountry: country,
+                userAge: age,
+                userGoal: goal,
+                lang: 'en'
+            })
         });
 
-        // Form එක Submit කරන කොටස
-        document.getElementById('submitDetailsBtn').addEventListener('click', async () => {
-            const name = document.getElementById('userName').value;
-            const country = document.getElementById('userCountry').value;
-            const age = document.getElementById('userAge').value;
-            const goal = document.getElementById('userGoal').value;
+        const onboardData = await onboardRes.json();
 
-            if(!name || !country || !age || !goal) {
-                alert("Please fill all the details!");
-                return;
-            }
+        if (!onboardRes.ok) {
+            throw new Error(onboardData.error || "Onboard failed");
+        }
 
-            const btn = document.getElementById('submitDetailsBtn');
-            btn.innerText = "AI is analyzing...";
-            btn.disabled = true;
-
-            try {
-                // 1. Firebase Token එක ගන්නවා
-                const token = await currentUser.getIdToken();
-
-                // 2. අපේ Render Server එකට යවනවා
-                const response = await fetch('https://focusvillain-server.onrender.com/api/onboard', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        userName: name,
-                        userCountry: country,
-                        userAge: age,
-                        userGoal: goal
-                    })
-                });
-
-                const data = await response.json();
-
-                if(response.ok) {
-                    // සාර්ථක වුණාම
-                    alert(`Success! AI classified your goal as: ${data.data.category}`);
-                    // ඊළඟට අපි මේකෙන් Dashboard එකට යන විදිය හදමු
-                } else {
-                    alert("Server Error: " + data.error);
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Network Error! Make sure your backend is running.");
-            } finally {
-                btn.innerText = "Submit & Continue";
-                btn.disabled = false;
-            }
+        // 2. Quiz ප්‍රශ්න ඉල්ලනවා
+        btn.innerText = "Generating your quiz...";
+        
+        const quizRes = await fetch('https://focusvillain-server.onrender.com/api/quiz/generate', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        const quizData = await quizRes.json();
+        
+        if (!quizRes.ok) {
+            throw new Error(quizData.error || "Quiz generation failed");
+        }
+
+        // 3. ප්‍රශ්න ආවම, ඒක Form එකේ පෙන්නනවා (මේක අපි ඊළඟට ලස්සනට හදමු)
+        alert("Success! We generated " + quizData.questions.length + " questions for you.");
+        console.log(quizData.questions); // කොන්සෝල් එකේ බලාගන්න පුළුවන් ප්‍රශ්න ටික
+
+    } catch (error) {
+        console.error(error);
+        alert("Error: " + error.message);
+    } finally {
+        btn.innerText = "Submit & Continue";
+        btn.disabled = false;
+    }
+});
+        
     </script>
 </body>
 </html>
