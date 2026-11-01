@@ -220,11 +220,11 @@
                     body: JSON.stringify({ answers })
                 });
 
-                if (res.ok) {
-                    alert("Success! Your custom plan is ready. Next: Dashboard!");
-                } else {
-                    throw new Error("Failed to save answers");
-                }
+              if (res.ok) {
+    window.location.href = "dashboard.html";
+} else {
+    throw new Error("Failed to save answers");
+              }
             } catch (error) {
                 alert("Error: " + error.message);
             } finally {
