@@ -19,46 +19,59 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-
-  onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // 1. යූසර්ගේ නම උඩ දකුණේ පෙන්නන්න
+        // 1. යූසර්ගේ නම පෙන්නන්න
         const nameDisplay = document.getElementById('userNameDisplay');
         if(nameDisplay) {
             nameDisplay.textContent = user.displayName ? user.displayName.split(' ')[0] : "User";
         }
 
-        // 2. අපේ Backend එකෙන් යූසර්ගේ අනිත් දත්ත අරගන්න
         try {
+            // 2. දත්ත ලෝඩ් කරන්න
             const token = await user.getIdToken();
-          const token = await user.getIdToken();
-loadPosts(token); 
+            
+            // Profile Data
             const res = await fetch('https://focusvillain-server.onrender.com/api/profile', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const profileData = await res.json();
-            
-            if (profileData.status === 'success') {
-                const dbUser = profileData.data;
-                localStorage.setItem('focusvillain_profile_v2', JSON.stringify({
-                    ...JSON.parse(localStorage.getItem('focusvillain_profile_v2') || '{}'),
-                    name: dbUser.name,
-                    goal: dbUser.goal,
-                    category: dbUser.category,
-                    age: dbUser.age
-                }));
-                
-                console.log("MongoDB Profile Loaded:", dbUser);
+            if(profileData.status === 'success') {
+                localStorage.setItem('focusvillain_profile_v2', JSON.stringify(profileData.data));
+                console.log("Profile Loaded:", profileData.data);
             }
+
+            // Posts Data
+            const postRes = await fetch('https://focusvillain-server.onrender.com/api/posts/my-feed', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const postData = await postRes.json();
+            
+            if (postData.status === 'success' && postData.posts.length > 0) {
+                document.getElementById('postsFeed').style.display = 'block';
+                const postList = document.getElementById('postList');
+                
+                postList.innerHTML = postData.posts.map(post => `
+                    <div class="task-row flex flex-col gap-2">
+                        <div class="flex justify-between items-start">
+                            <h4 class="text-sm font-bold text-white">${post.title}</h4>
+                            <span class="text-[10px] bg-violet/20 text-violet px-2 py-1 rounded-md">${post.sponsorName}</span>
+                        </div>
+                        <p class="text-xs text-muted">${post.description}</p>
+                        ${post.contactLink ? `<a href="${post.contactLink}" target="_blank" class="text-xs text-cyan mt-2 inline-block hover:underline"><i class="fa-solid fa-link"></i> Contact Sponsor</a>` : ''}
+                    </div>
+                `).join('');
+            }
+
         } catch (err) {
-            console.error("Error loading profile:", err);
+            console.error("Error loading data:", err);
         }
 
     } else {
         window.location.href = "index.html";
     }
 });
-  // Posts ලෝඩ් කරන Function එක
+  
 async function loadPosts(userToken) {
     try {
         const res = await fetch('https://focusvillain-server.onrender.com/api/posts/my-feed', {
