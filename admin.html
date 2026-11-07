@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusVillain - Admin Panel</title>
+    <style>
+        body { background-color: #0B0B14; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .box { background: #131321; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; margin: auto; border: 1px solid #28283B; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #303047; background: #1A1A2B; color: white; box-sizing: border-box; font-size: 14px; }
+        button { background: #8B5CF6; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; font-weight: bold; }
+        button:hover { background: #7C3AED; }
+        #status { margin-top: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Admin Panel</h2>
+        <p style="color: #9292AA; font-size: 13px; margin-bottom: 20px;">Add Sponsored Posts for Students</p>
+
+        <input type="text" id="sponsorName" placeholder="Tuition Teacher / Sponsor Name">
+        <input type="text" id="title" placeholder="Post Title (e.g. A/L Biology Class)">
+        <textarea id="description" rows="3" placeholder="Description"></textarea>
+        <input type="text" id="contactLink" placeholder="Contact (Phone / WhatsApp Link)">
+        
+        <select id="targetCategory">
+            <option value="" disabled selected>Target Category (Who should see this?)</option>
+            <option value="Exams">Exams (School/University)</option>
+            <option value="Tech / Coding">Tech / Coding</option>
+            <option value="Trading / Finance">Trading / Finance</option>
+            <option value="Fitness / Health">Fitness / Health</option>
+            <option value="Business / Startup">Business / Startup</option>
+            <option value="Creative">Creative (Art, Music, Writing)</option>
+            <option value="Language">Language Learning</option>
+            <option value="Career / Jobs">Career / Jobs</option>
+            <option value="Personal Growth">Personal Growth</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <button id="submitPostBtn">Publish Post</button>
+        <p id="status"></p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // ඔයාගේ Firebase Config එක
+        const firebaseConfig = {
+            apiKey: "AIzaSyBe0ia1FGw2poDTonlXi0V2LvRQGwi8CX4",
+            authDomain: "focusai-7fe3c.firebaseapp.com",
+            projectId: "focusai-7fe3c",
+            storageBucket: "focusai-7fe3c.firebasestorage.app",
+            messagingSenderId: "761646577346",
+            appId: "1:761646577346:web:42d5c1b2bd9fd8fe846d5b",
+            measurementId: "G-0T6JWZRD7X"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+
+        // ලොග් වෙලා ඉන්නවද බලනවා
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+            } else {
+                // ලොග් වෙලා නැත්නම් ආයේ index එකට යවනවා
+                window.location.href = "index.html";
+            }
+        });
+
+        // Post එක Submit කරන කොටස
+        document.getElementById('submitPostBtn').addEventListener('click', async () => {
+            const sponsorName = document.getElementById('sponsorName').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const contactLink = document.getElementById('contactLink').value;
+            const targetCategory = document.getElementById('targetCategory').value;
+
+            if (!sponsorName || !title || !description || !targetCategory) {
+                document.getElementById('status').style.color = "red";
+                document.getElementById('status').innerText = "Please fill all required fields!";
+                return;
+            }
+
+            const btn = document.getElementById('submitPostBtn');
+            btn.innerText = "Publishing...";
+            btn.disabled = true;
+
+            try {
+                const token = await currentUser.getIdToken();
+                
+                const res = await fetch('https://focusvillain-server.onrender.com/api/posts/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ sponsorName, title, description, contactLink, targetCategory })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('status').style.color = "#6EE7B7";
+                    document.getElementById('status').innerText = "Post Published Successfully!";
+                    // Form එක හිස් කරනවා
+                    document.getElementById('sponsorName').value = '';
+                    document.getElementById('title').value = '';
+                    document.getElementById('description').value = '';
+                    document.getElementById('contactLink').value = '';
+                    document.getElementById('targetCategory').value = '';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                document.getElementById('status').style.color = "red";
+                document.getElementById('status').innerText = "Error: " + error.message;
+            } finally {
+                btn.innerText = "Publish Post";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
