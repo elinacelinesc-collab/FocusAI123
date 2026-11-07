@@ -20,16 +20,42 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  // යූසර් ලොග් වෙලා ඉන්නවද බලනවා
-  onAuthStateChanged(auth, (user) => {
-      if (user) {
-          // ලොග් වෙලා නම්, නම පෙන්නනවා
-          document.getElementById('userNameDisplay').textContent = user.displayName || "User";
-      } else {
-          // ලොග් වෙලා නැත්නම්, ආයේ index.html එකට යවනවා
-          window.location.href = "index.html";
-      }
-  });
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // 1. යූසර්ගේ නම උඩ දකුණේ පෙන්නන්න
+        const nameDisplay = document.getElementById('userNameDisplay');
+        if(nameDisplay) {
+            nameDisplay.textContent = user.displayName ? user.displayName.split(' ')[0] : "User";
+        }
+
+        // 2. අපේ Backend එකෙන් යූසර්ගේ අනිත් දත්ත අරගන්න
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch('https://focusvillain-server.onrender.com/api/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const profileData = await res.json();
+            
+            if (profileData.status === 'success') {
+                const dbUser = profileData.data;
+                localStorage.setItem('focusvillain_profile_v2', JSON.stringify({
+                    ...JSON.parse(localStorage.getItem('focusvillain_profile_v2') || '{}'),
+                    name: dbUser.name,
+                    goal: dbUser.goal,
+                    category: dbUser.category,
+                    age: dbUser.age
+                }));
+                
+                console.log("MongoDB Profile Loaded:", dbUser);
+            }
+        } catch (err) {
+            console.error("Error loading profile:", err);
+        }
+
+    } else {
+        window.location.href = "index.html";
+    }
+});
 </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
